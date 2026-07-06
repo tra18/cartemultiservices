@@ -1,0 +1,2 @@
+export const CARD_PRICE = 100_000
+export const MERCHANT_REGISTRATION_PRICE = 200_000
