@@ -27,13 +27,6 @@ export function MerchantLogin() {
     tryLogin(email, password)
   }
 
-  const handleDemoLogin = (which: 'prodimar' | 'riviera') => {
-    const demoEmail = which === 'prodimar' ? 'prodimar@carte.gn' : 'riviera@carte.gn'
-    setEmail(demoEmail)
-    setPassword('demo123')
-    tryLogin(demoEmail, 'demo123')
-  }
-
   return (
     <div className="page-container-narrow flex flex-col">
       <div className="flex flex-1 flex-col justify-center px-6 py-12">
@@ -98,23 +91,6 @@ export function MerchantLogin() {
             Se connecter
           </button>
         </form>
-
-        <div className="mt-6 space-y-2">
-          <button
-            type="button"
-            onClick={() => handleDemoLogin('prodimar')}
-            className="w-full rounded-xl border border-dashed border-emerald-200 bg-emerald-50 py-2.5 text-sm text-emerald-700 hover:bg-emerald-100"
-          >
-            Connexion rapide Prodimar · prodimar@carte.gn
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDemoLogin('riviera')}
-            className="w-full rounded-xl border border-dashed border-emerald-200 bg-emerald-50 py-2.5 text-sm text-emerald-700 hover:bg-emerald-100"
-          >
-            Connexion rapide Riviera · riviera@carte.gn
-          </button>
-        </div>
 
         <p className="mt-6 text-center text-sm text-slate-600">
           Nouveau commerçant ?{' '}

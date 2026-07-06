@@ -29,11 +29,6 @@ export function Login() {
     navigate(from, { replace: true })
   }
 
-  const fillDemo = () => {
-    setEmail('demo@carte.gn')
-    setPassword('demo123')
-  }
-
   return (
     <AuthLayout
       title="Connexion"
@@ -105,17 +100,6 @@ export function Login() {
       </form>
 
       <div className="mt-6 space-y-4 text-center text-sm">
-        <button
-          type="button"
-          onClick={fillDemo}
-          className="w-full rounded-xl border border-dashed border-indigo-200 bg-indigo-50 py-3 text-indigo-700 transition hover:bg-indigo-100"
-        >
-          Utiliser le compte démo
-          <span className="mt-0.5 block text-xs text-indigo-500">
-            demo@carte.gn · demo123 · PIN carte : 5678
-          </span>
-        </button>
-
         <a
           href="/commander-carte"
           className="block w-full rounded-xl border-2 border-indigo-200 bg-indigo-50 py-3 text-center font-semibold text-indigo-700 transition hover:bg-indigo-100"

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Settings, Shield } from 'lucide-react'
-import { ADMIN_DEMO_CREDENTIALS, useAdminAuth } from '../../context/AdminAuthContext'
+import { useAdminAuth } from '../../context/AdminAuthContext'
 
 export function AdminLogin() {
   const { login } = useAdminAuth()
@@ -61,10 +61,6 @@ export function AdminLogin() {
           Connexion admin
         </button>
       </form>
-
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Démo : {ADMIN_DEMO_CREDENTIALS.email} / {ADMIN_DEMO_CREDENTIALS.password}
-      </p>
     </div>
   )
 }
