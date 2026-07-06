@@ -4,7 +4,7 @@ export interface SimulatedEmail {
   subject: string
   body: string
   sentAt: string
-  type: 'activation_code' | 'card_shipped' | 'welcome_account' | 'password_reminder' | 'transaction_alert' | 'card_blocked' | 'wallet_added'
+  type: 'activation_code' | 'card_shipped' | 'welcome_account' | 'password_reminder' | 'transaction_alert' | 'card_blocked' | 'wallet_added' | 'digital_card'
 }
 
 const EMAILS_KEY = 'carte-multiservice-emails'
@@ -42,7 +42,7 @@ export function sendActivationCodeEmail(
   fullName: string,
   activationCode: string
 ): SimulatedEmail {
-  const subject = 'Votre code d\'activation — Carte Multiservice'
+  const subject = 'Votre code d\'activation — Guinée Multiservices'
   const body = `Bonjour ${fullName},
 
 Merci pour votre commande de carte multiservice.
@@ -56,7 +56,7 @@ Ce code vous sera demandé lors de l'activation de votre carte dans l'applicatio
 ⚠️ Ne partagez ce code avec personne.
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'activation_code')
 }
@@ -83,7 +83,7 @@ Pour vous reconnecter : ouvrez l'application → Connexion → saisissez votre e
 Mot de passe oublié ? Utilisez « Mot de passe oublié » sur la page de connexion.
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'welcome_account')
 }
@@ -102,13 +102,13 @@ Si vous avez commandé une carte, votre mot de passe est celui que vous avez dé
 Nous ne pouvons pas vous renvoyer votre mot de passe par email. Si vous l'avez oublié, contactez le support : support@carte.gn
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'password_reminder')
 }
 
 export function sendCardShippedEmail(to: string, fullName: string): SimulatedEmail {
-  const subject = 'Votre carte est prête — Carte Multiservice'
+  const subject = 'Votre carte est prête — Guinée Multiservices'
   const body = `Bonjour ${fullName},
 
 Bonne nouvelle ! Votre carte multiservice est prête.
@@ -118,7 +118,7 @@ Récupérez votre carte selon le mode de livraison choisi, puis activez-la dans 
 Ouvrez l'application → Activer ma carte → saisissez votre code.
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'card_shipped')
 }
@@ -132,8 +132,8 @@ export function sendTransactionAlertEmail(
   isCredit: boolean
 ): SimulatedEmail {
   const subject = isCredit
-    ? `Recharge +${amount.toLocaleString('fr-GN')} GNF — Carte Multiservice`
-    : `Paiement -${amount.toLocaleString('fr-GN')} GNF — Carte Multiservice`
+    ? `Recharge +${amount.toLocaleString('fr-GN')} GNF — Guinée Multiservices`
+    : `Paiement -${amount.toLocaleString('fr-GN')} GNF — Guinée Multiservices`
   const body = `Bonjour ${fullName},
 
 ${isCredit ? 'Recharge effectuée' : 'Paiement effectué'} sur votre carte multiservice.
@@ -146,13 +146,13 @@ ${isCredit ? 'Recharge effectuée' : 'Paiement effectué'} sur votre carte multi
 Si vous n'êtes pas à l'origine de cette opération, bloquez immédiatement votre carte dans l'application (Sécurité carte).
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'transaction_alert')
 }
 
 export function sendCardBlockedEmail(to: string, fullName: string): SimulatedEmail {
-  const subject = 'Carte bloquée — Carte Multiservice'
+  const subject = 'Carte bloquée — Guinée Multiservices'
   const body = `Bonjour ${fullName},
 
 Votre carte multiservice a été bloquée suite à votre demande (ou après trop de tentatives PIN incorrectes).
@@ -162,7 +162,7 @@ Aucun paiement ni recharge ne pourra être effectué tant que la carte n'est pas
 Si vous n'êtes pas à l'origine de ce blocage, contactez immédiatement le support : support@carte.gn
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'card_blocked')
 }
@@ -173,7 +173,7 @@ export function sendWalletAddedEmail(
   wallet: 'apple' | 'google'
 ): SimulatedEmail {
   const walletName = wallet === 'apple' ? 'Apple Wallet' : 'Google Wallet'
-  const subject = `Carte ajoutée à ${walletName} — Carte Multiservice`
+  const subject = `Carte ajoutée à ${walletName} — Guinée Multiservices`
   const body = `Bonjour ${fullName},
 
 Votre carte multiservice a été ajoutée à ${walletName} avec succès.
@@ -183,9 +183,34 @@ Vous pouvez désormais payer sans contact avec votre téléphone chez les commer
 Si vous n'êtes pas à l'origine de cette action, bloquez immédiatement votre carte dans l'application (Sécurité carte).
 
 Cordialement,
-L'équipe Carte Multiservice Guinée`
+L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'wallet_added')
+}
+
+export function sendDigitalCardEmail(
+  to: string,
+  fullName: string,
+  digitalCardNumber: string
+): SimulatedEmail {
+  const subject = 'Votre carte numérique est prête — Guinée Multiservices'
+  const body = `Bonjour ${fullName},
+
+Votre carte numérique multiservice est maintenant active.
+
+  Numéro carte numérique : ${digitalCardNumber}
+
+Vous pouvez dès maintenant :
+  • Recharger votre solde
+  • Payer chez les commerçants partenaires
+  • Ajouter la carte à Apple Wallet ou Google Pay depuis votre profil
+
+Votre carte physique est toujours en préparation. À réception, activez-la avec le QR code et le code email — vous conserverez le même PIN et le même solde.
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'digital_card')
 }
 
 export function getEmailsForAddress(email: string): SimulatedEmail[] {

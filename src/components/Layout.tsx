@@ -1,5 +1,7 @@
-import { CreditCard, History, Home, LogOut, PlusCircle, QrCode, ShoppingBag, Store, User } from 'lucide-react'
+import { History, Home, LogOut, PlusCircle, QrCode, ShoppingBag, Store, User } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { PlatformLogo } from './PlatformLogo'
+import { PLATFORM_NAME } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
@@ -19,12 +21,10 @@ export function Layout() {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <CreditCard className="h-5 w-5" />
-            </div>
+            <PlatformLogo size="sm" />
             <div>
               <Link to="/profil" className="block hover:opacity-80">
-                <h1 className="text-lg font-bold text-slate-900">Carte Multiservice</h1>
+                <h1 className="text-base font-bold leading-tight text-slate-900">{PLATFORM_NAME}</h1>
                 <p className="text-xs text-slate-500">
                   {currentUser?.fullName} · GNF
                 </p>

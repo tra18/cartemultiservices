@@ -303,3 +303,81 @@ export function createMerchant(data: Omit<MerchantAccount, 'id' | 'balance' | 's
 export function getMerchantPayments(merchantId: string): PaymentRequest[] {
   return loadPaymentRequests().filter((p) => p.merchantId === merchantId)
 }
+
+export interface MerchantWithdrawalWithMeta extends WithdrawalRequest {
+  merchantId: string
+  merchantName: string
+}
+
+export function getAllPendingMerchantWithdrawals(): MerchantWithdrawalWithMeta[] {
+  return loadMerchants().flatMap((m) =>
+    m.withdrawals
+      .filter((w) => w.status === 'pending')
+      .map((w) => ({
+        ...w,
+        merchantId: m.id,
+        merchantName: m.businessName,
+      }))
+  )
+}
+
+export function processMerchantWithdrawal(
+  merchantId: string,
+  withdrawalId: string,
+  action: 'complete' | 'reject'
+): { success: boolean; error?: string } {
+  const merchants = loadMerchants()
+  const index = merchants.findIndex((m) => m.id === merchantId)
+  if (index === -1) return { success: false, error: 'Commerçant introuvable' }
+
+  const merchant = merchants[index]
+  const wIndex = merchant.withdrawals.findIndex((w) => w.id === withdrawalId)
+  if (wIndex === -1) return { success: false, error: 'Retrait introuvable' }
+
+  const withdrawal = merchant.withdrawals[wIndex]
+  if (withdrawal.status !== 'pending') {
+    return { success: false, error: 'Demande déjà traitée' }
+  }
+
+  const now = new Date().toISOString()
+  const updatedWithdrawals = [...merchant.withdrawals]
+
+  if (action === 'reject') {
+    updatedWithdrawals[wIndex] = { ...withdrawal, status: 'rejected', processedAt: now }
+    merchants[index] = { ...merchant, withdrawals: updatedWithdrawals }
+  } else {
+    if (merchant.balance < withdrawal.amount) {
+      return { success: false, error: 'Solde commerçant insuffisant' }
+    }
+    updatedWithdrawals[wIndex] = { ...withdrawal, status: 'completed', processedAt: now }
+    merchants[index] = {
+      ...merchant,
+      balance: merchant.balance - withdrawal.amount,
+      withdrawals: updatedWithdrawals,
+    }
+  }
+
+  saveMerchants(merchants)
+  return { success: true }
+}
+
+export function addMerchantCategory(
+  merchantId: string,
+  category: Category
+): { success: boolean; error?: string } {
+  const merchants = loadMerchants()
+  const index = merchants.findIndex((m) => m.id === merchantId)
+  if (index === -1) return { success: false, error: 'Commerçant introuvable' }
+
+  const merchant = merchants[index]
+  if (merchant.categories.includes(category)) {
+    return { success: false, error: 'Cette catégorie est déjà active' }
+  }
+
+  merchants[index] = {
+    ...merchant,
+    categories: [...merchant.categories, category],
+  }
+  saveMerchants(merchants)
+  return { success: true }
+}

@@ -29,6 +29,7 @@ import { MerchantHistory } from './pages/merchant/MerchantHistory'
 import { MerchantLogin } from './pages/merchant/MerchantLogin'
 import { MerchantRegister } from './pages/merchant/MerchantRegister'
 import { MerchantWithdrawals } from './pages/merchant/MerchantWithdrawals'
+import { MerchantCategories } from './pages/merchant/MerchantCategories'
 import { ActivateCard } from './pages/ActivateCard'
 import { BuyFuel } from './pages/BuyFuel'
 import { MyCardOrder } from './pages/MyCardOrder'
@@ -40,6 +41,7 @@ import { AdminLogin } from './pages/admin/AdminLogin'
 import { AdminOrders } from './pages/admin/AdminOrders'
 import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
 import { AdminPrintCard } from './pages/admin/AdminPrintCard'
+import { AdminFinance } from './pages/admin/AdminFinance'
 
 export default function App() {
   return (
@@ -66,6 +68,7 @@ export default function App() {
               }
             >
               <Route index element={<AdminOrders />} />
+              <Route path="finances" element={<AdminFinance />} />
               <Route path="commandes/:orderId" element={<AdminOrderDetail />} />
               <Route path="commandes/:orderId/imprimer" element={<AdminPrintCard />} />
             </Route>
@@ -98,6 +101,7 @@ export default function App() {
               <Route index element={<MerchantDashboard />} />
               <Route path="encaisser" element={<MerchantCollect />} />
               <Route path="retraits" element={<MerchantWithdrawals />} />
+              <Route path="categories" element={<MerchantCategories />} />
               <Route path="historique" element={<MerchantHistory />} />
             </Route>
 

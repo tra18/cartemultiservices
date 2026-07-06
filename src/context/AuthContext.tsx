@@ -18,10 +18,12 @@ import {
 } from '../store/orderStore'
 import { isEmailTaken, validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
-import { isCardActive } from '../utils/cardStatus'
+import { generateCardNumber } from '../utils/card'
+import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
 import { validateCardPin } from '../utils/cardPin'
 import {
   sendCardBlockedEmail,
+  sendDigitalCardEmail,
   sendTransactionAlertEmail,
   sendWalletAddedEmail,
 } from '../services/emailService'
@@ -126,6 +128,7 @@ interface AuthContextValue {
   blockCard: () => string | null
   unblockCard: (pin: string) => string | null
   addToMobileWallet: (wallet: 'apple' | 'google') => string | null
+  enableDigitalCard: (pin: string) => string | null
   markCardShipped: () => void
   refreshCurrentUser: () => void
 }
@@ -212,13 +215,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const requireActiveCard = (): string | null => {
+  const requireUsableCard = (): string | null => {
     if (!currentUser) return 'Non connecté'
     if (currentUser.cardStatus === 'blocked') {
       return 'Votre carte est bloquée. Débloquez-la dans Sécurité carte.'
     }
-    if (!isCardActive(currentUser)) {
-      return 'Activez votre carte physique pour utiliser ce service'
+    if (!isCardUsable(currentUser)) {
+      return 'Activez votre carte numérique ou physique pour utiliser ce service'
     }
     return null
   }
@@ -227,7 +230,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyCardPin = (pin: string): string | null => {
     if (!currentUser) return 'Non connecté'
-    if (!currentUser.cardPin) return 'Code PIN non configuré. Réactivez votre carte.'
+    if (!currentUser.cardPin) {
+      return 'Code PIN non configuré. Activez votre carte numérique ou physique.'
+    }
     if (currentUser.cardStatus === 'blocked' && currentUser.pinFailedAttempts! >= MAX_PIN_ATTEMPTS) {
       return 'Carte bloquée après trop de tentatives. Débloquez dans Sécurité carte.'
     }
@@ -257,7 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const blockCard = (): string | null => {
     if (!currentUser) return 'Non connecté'
     if (currentUser.cardStatus === 'blocked') return 'Carte déjà bloquée'
-    if (!isCardActive(currentUser)) return 'Carte non active'
+    if (!isCardUsable(currentUser)) return 'Carte non active'
 
     updateUser(currentUser.id, (user) => ({
       ...user,
@@ -288,8 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (currentUser.cardStatus === 'blocked') {
       return 'Carte bloquée. Débloquez-la avant d\'ajouter au portefeuille.'
     }
-    if (!isCardActive(currentUser)) {
-      return 'Activez votre carte avant de l\'ajouter au portefeuille.'
+    if (!isCardUsable(currentUser)) {
+      return 'Activez votre carte numérique ou physique avant de l\'ajouter au portefeuille.'
     }
 
     const now = new Date().toISOString()
@@ -305,6 +310,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...(wallet === 'apple' ? { walletAppleAddedAt: now } : { walletGoogleAddedAt: now }),
     }))
     sendWalletAddedEmail(currentUser.email, currentUser.fullName, wallet)
+    return null
+  }
+
+  const enableDigitalCard = (pin: string): string | null => {
+    if (!currentUser) return 'Non connecté'
+    const pinErr = validateCardPin(pin)
+    if (pinErr) return pinErr
+
+    if (!canEnableDigitalCard(currentUser)) {
+      return 'Carte numérique non disponible pour votre compte'
+    }
+
+    const digitalNumber = generateCardNumber()
+    const now = new Date().toISOString()
+
+    updateUser(currentUser.id, (user) => ({
+      ...user,
+      digitalCardNumber: digitalNumber,
+      digitalCardEnabledAt: now,
+      cardPin: pin,
+      pinFailedAttempts: 0,
+    }))
+    sendDigitalCardEmail(currentUser.email, currentUser.fullName, digitalNumber)
     return null
   }
 
@@ -405,7 +433,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const recharge = (amount: number, method: string, pin: string): boolean => {
-    const cardErr = requireActiveCard()
+    const cardErr = requireUsableCard()
     if (cardErr) return false
     const pinErr = verifyCardPin(pin)
     if (pinErr) return false
@@ -443,7 +471,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     pin: string,
     detail?: string
   ): boolean => {
-    const cardErr = requireActiveCard()
+    const cardErr = requireUsableCard()
     if (cardErr) return false
     const pinErr = verifyCardPin(pin)
     if (pinErr) return false
@@ -491,7 +519,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const payViaQr = (paymentId: string, pin: string): { success: boolean; error?: string } => {
     if (!currentUser) return { success: false, error: 'Non connecté' }
-    const cardErr = requireActiveCard()
+    const cardErr = requireUsableCard()
     if (cardErr) return { success: false, error: cardErr }
     const pinErr = verifyCardPin(pin)
     if (pinErr) return { success: false, error: pinErr }
@@ -538,6 +566,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         blockCard,
         unblockCard,
         addToMobileWallet,
+        enableDigitalCard,
         markCardShipped,
         refreshCurrentUser,
       }}

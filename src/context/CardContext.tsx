@@ -1,12 +1,17 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { Category } from '../types'
 import { formatCurrency } from '../utils/currency'
+import {
+  getEffectiveCardNumber,
+  isDigitalCardActive,
+} from '../utils/cardStatus'
 import { useAuth } from './AuthContext'
 
 interface CardContextValue {
   cardNumber: string
   holderName: string
   balance: number
+  isDigital: boolean
   transactions: import('../types').Transaction[]
   recharge: (amount: number, method: string, pin: string) => boolean
   pay: (
@@ -27,9 +32,10 @@ export function CardProvider({ children }: { children: ReactNode }) {
   if (!currentUser) return null
 
   const value: CardContextValue = {
-    cardNumber: currentUser.cardNumber,
+    cardNumber: getEffectiveCardNumber(currentUser),
     holderName: currentUser.fullName,
     balance: currentUser.balance,
+    isDigital: isDigitalCardActive(currentUser),
     transactions: currentUser.transactions,
     recharge,
     pay,

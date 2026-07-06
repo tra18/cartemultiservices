@@ -1,10 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ArrowDownToLine, History, LayoutDashboard, LogOut, QrCode, Store } from 'lucide-react'
+import { ArrowDownToLine, History, Layers, LayoutDashboard, LogOut, QrCode } from 'lucide-react'
+import { PlatformLogo } from '../PlatformLogo'
+import { PLATFORM_NAME } from '../../constants/brand'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
 
 const navItems = [
   { to: '/commercant', label: 'Tableau de bord', icon: LayoutDashboard, end: true },
   { to: '/commercant/encaisser', label: 'Encaisser', icon: QrCode },
+  { to: '/commercant/categories', label: 'Catégories', icon: Layers },
   { to: '/commercant/retraits', label: 'Retraits', icon: ArrowDownToLine },
   { to: '/commercant/historique', label: 'Ventes', icon: History },
 ]
@@ -17,12 +20,10 @@ export function MerchantLayout() {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 px-4 py-4 backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
-              <Store className="h-5 w-5" />
-            </div>
+            <PlatformLogo size="sm" />
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Portail Commerçant</h1>
-              <p className="text-xs text-slate-500">{currentMerchant?.businessName}</p>
+              <h1 className="text-base font-bold leading-tight text-slate-900">Portail Commerçant</h1>
+              <p className="text-xs text-slate-500">{PLATFORM_NAME} · {currentMerchant?.businessName}</p>
             </div>
           </div>
           <button

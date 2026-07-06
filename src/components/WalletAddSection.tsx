@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { CheckCircle2, Smartphone } from 'lucide-react'
 import { useCardPinGate } from '../hooks/useCardPinGate'
 import { detectWalletPlatform, formatWalletAddedDate, type MobileWalletKind } from '../utils/mobileWallet'
+import { PLATFORM_NAME } from '../constants/brand'
 
 interface WalletAddSectionProps {
   appleAddedAt?: string
   googleAddedAt?: string
   onAdd: (wallet: MobileWalletKind) => Promise<string | null>
   disabled?: boolean
+  isDigital?: boolean
 }
 
 function AppleWalletIcon({ className }: { className?: string }) {
@@ -35,6 +37,7 @@ export function WalletAddSection({
   googleAddedAt,
   onAdd,
   disabled = false,
+  isDigital = false,
 }: WalletAddSectionProps) {
   const platform = detectWalletPlatform()
   const { requestPin, PinModal } = useCardPinGate()
@@ -72,7 +75,9 @@ export function WalletAddSection({
         <div>
           <h3 className="font-semibold text-slate-900">Portefeuille numérique</h3>
           <p className="mt-0.5 text-sm text-slate-500">
-            Payez en magasin avec votre téléphone, sans sortir la carte physique.
+            {isDigital
+              ? 'Ajoutez votre carte numérique pour payer sans contact en attendant la carte physique.'
+              : 'Payez en magasin avec votre téléphone, sans sortir la carte physique.'}
           </p>
         </div>
       </div>
@@ -144,7 +149,7 @@ export function WalletAddSection({
 
       <p className="mt-4 text-xs leading-relaxed text-slate-400">
         Votre carte multiservice sera disponible pour les paiements sans contact compatibles. Le solde
-        reste synchronisé avec votre compte Carte Multiservice.
+        reste synchronisé avec votre compte {PLATFORM_NAME}.
       </p>
     </section>
   )

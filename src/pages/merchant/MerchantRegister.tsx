@@ -7,7 +7,7 @@ import { useMerchantAuth } from '../../context/MerchantAuthContext'
 import type { Category } from '../../types'
 import { CATEGORY_LABELS } from '../../types'
 import { formatCurrency } from '../../utils/currency'
-import { MERCHANT_REGISTRATION_PRICE } from '../../utils/pricing'
+import { MERCHANT_REGISTRATION_PRICE, calculateMerchantRegistrationPrice } from '../../utils/pricing'
 
 const CATEGORIES: Category[] = ['restaurants', 'transport', 'vetements', 'courses']
 
@@ -26,6 +26,8 @@ export function MerchantRegister() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('orange-money')
   const [paymentPhone, setPaymentPhone] = useState('')
   const [error, setError] = useState('')
+
+  const registrationTotal = calculateMerchantRegistrationPrice(categories.length)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,7 +70,11 @@ export function MerchantRegister() {
         </div>
         <h1 className="text-2xl font-bold text-slate-900">Inscription commerçant</h1>
         <p className="mt-2 text-sm text-slate-500">
-          Compte professionnel · <span className="font-semibold text-emerald-600">{formatCurrency(MERCHANT_REGISTRATION_PRICE)}</span>
+          Compte professionnel · à partir de{' '}
+          <span className="font-semibold text-emerald-600">
+            {formatCurrency(MERCHANT_REGISTRATION_PRICE)}
+          </span>
+          /catégorie
         </p>
       </div>
 
@@ -121,7 +127,8 @@ export function MerchantRegister() {
                 Catégories d&apos;activité
               </label>
               <p className="mb-2 text-xs text-slate-500">
-                Sélectionnez une ou plusieurs catégories (ex. restaurant + transport).
+                {categories.length} sélectionnée(s) — total :{' '}
+                <strong className="text-emerald-700">{formatCurrency(registrationTotal)}</strong>
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {CATEGORIES.map((cat) => {
@@ -183,7 +190,10 @@ export function MerchantRegister() {
             <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
               <p className="font-semibold">Frais d&apos;ouverture de compte commerçant</p>
               <p className="mt-1 text-2xl font-bold text-emerald-900">
-                {formatCurrency(MERCHANT_REGISTRATION_PRICE)}
+                {formatCurrency(registrationTotal)}
+              </p>
+              <p className="mt-1 text-xs text-emerald-600">
+                {categories.length} catégorie(s) × {formatCurrency(MERCHANT_REGISTRATION_PRICE)}
               </p>
               <p className="mt-2 text-emerald-700">
                 Accès au portail, encaissement QR code et demandes de retrait.
@@ -219,7 +229,7 @@ export function MerchantRegister() {
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700"
           >
             <UserPlus className="h-5 w-5" />
-            {step === 1 ? 'Continuer' : `Payer ${formatCurrency(MERCHANT_REGISTRATION_PRICE)}`}
+            {step === 1 ? 'Continuer' : `Payer ${formatCurrency(registrationTotal)}`}
           </button>
         </div>
       </form>

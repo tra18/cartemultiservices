@@ -18,6 +18,9 @@ export interface UserAccount {
   walletAppleAddedAt?: string
   /** Date d'ajout au portefeuille Google */
   walletGoogleAddedAt?: string
+  /** Carte numérique provisoire (en attendant la carte physique) */
+  digitalCardNumber?: string
+  digitalCardEnabledAt?: string
 }
 
 export interface RegisterData {

@@ -4,6 +4,7 @@ import type { CardOrder, CardOrderFormData } from '../types/order'
 import type { UserAccount } from '../types/auth'
 import { generateCardNumber, generateCardToken } from '../utils/card'
 import { CARD_PRICE } from '../utils/pricing'
+import { recordCardOrderRevenue } from './treasuryStore'
 import { normalizeEmail, sanitizeText } from '../utils/validation'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
@@ -100,6 +101,7 @@ export function createCardOrder(userId: string, data: CardOrderFormData): CardOr
 
   const orders = loadCardOrders()
   saveCardOrders([order, ...orders])
+  recordCardOrderRevenue(order.id, CARD_PRICE, safeName)
   return order
 }
 

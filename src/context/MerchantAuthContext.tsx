@@ -7,8 +7,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { createMerchant, loadMerchants, saveMerchants } from '../store/platformStore'
+import { createMerchant, addMerchantCategory as addCategoryToStore, loadMerchants, saveMerchants } from '../store/platformStore'
+import {
+  recordMerchantCategoryRevenue,
+  recordMerchantRegistrationRevenue,
+} from '../store/treasuryStore'
+import type { Category } from '../types'
+import { CATEGORY_LABELS } from '../types'
 import type { MerchantAccount, MerchantRegisterData } from '../types/merchant'
+import { calculateAdditionalCategoryPrice, calculateMerchantRegistrationPrice } from '../utils/pricing'
 
 const SESSION_KEY = 'carte-multiservice-merchant-session'
 
@@ -20,6 +27,7 @@ interface MerchantAuthContextValue {
   register: (data: MerchantRegisterData) => string | null
   logout: () => void
   refreshMerchant: () => void
+  addCategory: (category: Category, paymentMethod: string) => string | null
 }
 
 const MerchantAuthContext = createContext<MerchantAuthContextValue | null>(null)
@@ -79,6 +87,8 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       return 'Sélectionnez au moins une catégorie'
     }
 
+    const registrationFee = calculateMerchantRegistrationPrice(data.categories.length)
+
     const newMerchant = createMerchant({
       businessName: data.businessName,
       email: data.email,
@@ -88,6 +98,13 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       mobileMoneyNumber: data.mobileMoneyNumber,
       registrationPaid: true,
     })
+
+    recordMerchantRegistrationRevenue(
+      newMerchant.id,
+      registrationFee,
+      data.businessName,
+      data.categories.length
+    )
 
     const updated = [...merchants, newMerchant]
     localStorage.setItem(SESSION_KEY, newMerchant.id)
@@ -103,6 +120,27 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(SESSION_KEY)
   }
 
+  const addCategory = (category: Category, _paymentMethod: string): string | null => {
+    if (!currentMerchant) return 'Non connecté'
+
+    const price = calculateAdditionalCategoryPrice()
+    const result = addCategoryToStore(currentMerchant.id, category)
+    if (!result.success) return result.error ?? 'Erreur'
+
+    recordMerchantCategoryRevenue(
+      currentMerchant.id,
+      price,
+      currentMerchant.businessName,
+      CATEGORY_LABELS[category]
+    )
+
+    const all = loadMerchants()
+    setMerchants(all)
+    const merchant = all.find((m) => m.id === currentMerchant.id)
+    if (merchant) setCurrentMerchant(merchant)
+    return null
+  }
+
   return (
     <MerchantAuthContext.Provider
       value={{
@@ -113,6 +151,7 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshMerchant,
+        addCategory,
       }}
     >
       {children}

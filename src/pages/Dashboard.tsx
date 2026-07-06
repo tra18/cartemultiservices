@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCard } from '../context/CardContext'
 import type { Category } from '../types'
 import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS } from '../types'
-import { resolveCardStatus } from '../utils/cardStatus'
+import { resolveCardStatus, isCardUsable, isDigitalCardActive, canEnableDigitalCard } from '../utils/cardStatus'
 
 const CATEGORIES: { key: Category; icon: typeof UtensilsCrossed; color: string }[] = [
   { key: 'restaurants', icon: UtensilsCrossed, color: 'bg-orange-50 text-orange-600 border-orange-100' },
@@ -21,6 +21,9 @@ export function Dashboard() {
   const { transactions } = useCard()
   const recent = transactions.slice(0, 4)
   const cardStatus = resolveCardStatus(currentUser)
+  const cardUsable = isCardUsable(currentUser)
+  const digitalActive = isDigitalCardActive(currentUser)
+  const canEnableDigital = canEnableDigitalCard(currentUser)
 
   useEffect(() => {
     refreshCurrentUser()
@@ -46,7 +49,7 @@ export function Dashboard() {
         </div>
       )}
 
-      {cardStatus !== 'active' && currentUser?.cardStatus !== 'blocked' && (
+      {cardStatus !== 'active' && !cardUsable && currentUser?.cardStatus !== 'blocked' && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
@@ -68,24 +71,40 @@ export function Dashboard() {
               {cardStatus === 'ordered' && (
                 <>
                   <p className="font-semibold text-amber-900">Carte en préparation</p>
-                  <p className="mt-1 text-amber-800">Votre commande est en cours de traitement.</p>
-                  <Link to="/ma-commande" className="mt-2 inline-block font-medium text-amber-700 underline">
+                  <p className="mt-1 text-amber-800">
+                    Activez votre carte numérique sur votre profil pour payer en attendant la livraison.
+                  </p>
+                  <Link
+                    to="/profil"
+                    className="mt-3 inline-block rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white hover:bg-cyan-700"
+                  >
+                    Activer la carte numérique
+                  </Link>
+                  <Link to="/ma-commande" className="mt-2 block font-medium text-amber-700 underline">
                     Suivre ma commande
                   </Link>
                 </>
               )}
               {cardStatus === 'shipped' && (
                 <>
-                  <p className="font-semibold text-amber-900">Carte prête !</p>
+                  <p className="font-semibold text-amber-900">Carte physique en route</p>
                   <p className="mt-1 text-amber-800">
-                    Activez votre carte avec le code reçu par email à la commande.
+                    Utilisez la carte numérique ou activez la carte physique à réception.
                   </p>
-                  <Link
-                    to="/activer-carte"
-                    className="mt-3 inline-block rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white"
-                  >
-                    Activer ma carte
-                  </Link>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      to="/profil"
+                      className="inline-block rounded-lg bg-cyan-600 px-4 py-2 font-medium text-white"
+                    >
+                      Carte numérique
+                    </Link>
+                    <Link
+                      to="/activer-carte"
+                      className="inline-block rounded-lg border border-indigo-300 bg-white px-4 py-2 font-medium text-indigo-700"
+                    >
+                      Activer carte physique
+                    </Link>
+                  </div>
                 </>
               )}
             </div>
@@ -93,9 +112,16 @@ export function Dashboard() {
         </div>
       )}
 
-      <CardVisual />
+      {digitalActive && cardStatus !== 'active' && (
+        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+          <span className="font-semibold">Carte numérique active</span>
+          <span className="text-cyan-800"> — votre carte physique arrive bientôt.</span>
+        </div>
+      )}
 
-      {cardStatus === 'active' && (
+      {(cardUsable || canEnableDigital) && <CardVisual />}
+
+      {cardUsable && (
         <>
           <Link
             to="/scanner"
@@ -139,7 +165,7 @@ export function Dashboard() {
         </>
       )}
 
-      {cardStatus === 'active' && (
+      {cardUsable && (
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Où utiliser ma carte
@@ -162,10 +188,14 @@ export function Dashboard() {
         </section>
       )}
 
-      {cardStatus !== 'active' && (
+      {!cardUsable && (
         <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-8 text-slate-400">
           <CreditCard className="h-6 w-6" />
-          <span className="text-sm">Recharge et paiements disponibles après activation</span>
+          <span className="text-sm">
+            {canEnableDigital
+              ? 'Activez votre carte numérique depuis le profil'
+              : 'Recharge et paiements disponibles après commande de carte'}
+          </span>
         </div>
       )}
 
@@ -174,7 +204,7 @@ export function Dashboard() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
             Activité récente
           </h2>
-          {cardStatus === 'active' && (
+          {cardUsable && (
             <Link to="/historique" className="text-sm font-medium text-indigo-600">
               Voir tout
             </Link>

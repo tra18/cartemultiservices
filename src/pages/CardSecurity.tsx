@@ -4,7 +4,7 @@ import { AlertTriangle, Lock, ShieldCheck, ShieldOff } from 'lucide-react'
 import { CardPinModal } from '../components/CardPinModal'
 import { useAuth } from '../context/AuthContext'
 import { maskCardNumber } from '../utils/card'
-import { isCardActive, resolveCardStatus } from '../utils/cardStatus'
+import { getEffectiveCardNumber, isCardUsable } from '../utils/cardStatus'
 
 export function CardSecurity() {
   const { currentUser, blockCard, unblockCard } = useAuth()
@@ -14,9 +14,8 @@ export function CardSecurity() {
 
   if (!currentUser) return null
 
-  const cardStatus = resolveCardStatus(currentUser)
   const isBlocked = currentUser.cardStatus === 'blocked'
-  const isActive = isCardActive(currentUser) && !isBlocked
+  const canManageSecurity = isCardUsable(currentUser) || isBlocked
 
   const handleBlock = () => {
     setMessage('')
@@ -39,13 +38,15 @@ export function CardSecurity() {
     setMessage('Carte débloquée. Vous pouvez à nouveau payer.')
   }
 
-  if (cardStatus !== 'active' && !isBlocked) {
+  if (!canManageSecurity && !isBlocked) {
     return (
       <div className="py-12 text-center">
         <Lock className="mx-auto h-12 w-12 text-slate-300" />
-        <p className="mt-4 text-slate-600">Disponible après activation de votre carte.</p>
-        <Link to="/" className="mt-4 inline-block text-indigo-600">
-          Retour à l&apos;accueil
+        <p className="mt-4 text-slate-600">
+          Activez votre carte numérique ou physique pour gérer la sécurité.
+        </p>
+        <Link to="/profil" className="mt-4 inline-block text-indigo-600">
+          Mon profil
         </Link>
       </div>
     )
@@ -56,7 +57,7 @@ export function CardSecurity() {
       <div>
         <h2 className="text-xl font-bold text-slate-900">Sécurité de la carte</h2>
         <p className="mt-1 text-sm text-slate-500">
-          {maskCardNumber(currentUser.cardNumber)} · {currentUser.fullName}
+          {maskCardNumber(getEffectiveCardNumber(currentUser))} · {currentUser.fullName}
         </p>
       </div>
 
@@ -102,7 +103,7 @@ export function CardSecurity() {
         </div>
       </div>
 
-      {isActive && (
+      {isCardUsable(currentUser) && !isBlocked && (
         <button
           type="button"
           onClick={handleBlock}

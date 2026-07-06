@@ -1,5 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { CreditCard } from 'lucide-react'
+import { PLATFORM_NAME, PLATFORM_LOGO } from '../../constants/brand'
 import { getCardActivationUrl } from '../../utils/card'
 
 interface PhysicalCardPrintProps {
@@ -20,19 +20,19 @@ export function PhysicalCardPrint({
   return (
     <div className="print-card-sheet mx-auto max-w-md space-y-6">
       {/* Recto */}
-      <div className="physical-card relative aspect-[1.586/1] overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 text-white shadow-xl">
+      <div className="physical-card relative aspect-[1.586/1] overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-green-800 to-emerald-900 p-6 text-white shadow-xl">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
         <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-white/5" />
 
         <div className="relative flex h-full flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-indigo-200">
-                Carte Multiservice · Guinée
+              <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-200">
+                {PLATFORM_NAME}
               </p>
-              <p className="mt-0.5 text-xs text-indigo-100">GNF</p>
+              <p className="mt-0.5 text-xs text-emerald-100">GNF</p>
             </div>
-            <CreditCard className="h-7 w-7 text-indigo-200" />
+            <img src={PLATFORM_LOGO} alt="" className="h-10 w-10 rounded-lg object-contain" />
           </div>
 
           <p className="font-mono text-lg tracking-[0.2em]">{cardNumber}</p>

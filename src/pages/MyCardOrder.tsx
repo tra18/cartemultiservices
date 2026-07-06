@@ -8,7 +8,7 @@ import { getLatestActivationEmail, getLatestWelcomeEmail } from '../services/ema
 import { getCardOrderByUserId } from '../store/orderStore'
 import { formatCurrency } from '../utils/currency'
 import { maskCardNumber } from '../utils/card'
-import { isCardActive, resolveCardStatus } from '../utils/cardStatus'
+import { isCardActive, isCardUsable, canEnableDigitalCard, resolveCardStatus } from '../utils/cardStatus'
 
 export function MyCardOrder() {
   const { currentUser, markCardShipped, refreshCurrentUser } = useAuth()
@@ -172,6 +172,21 @@ export function MyCardOrder() {
         </div>
       )}
 
+      {canEnableDigitalCard(currentUser) && (
+        <Link
+          to="/profil"
+          className="flex items-center justify-center gap-2 rounded-xl border-2 border-cyan-200 bg-cyan-50 py-3.5 font-semibold text-cyan-800 hover:bg-cyan-100"
+        >
+          Activer ma carte numérique (en attendant)
+        </Link>
+      )}
+
+      {isCardUsable(currentUser) && !isCardActive(currentUser) && (
+        <p className="rounded-xl bg-cyan-50 px-4 py-3 text-center text-sm text-cyan-900">
+          Carte numérique active — vous pouvez payer et recharger dès maintenant.
+        </p>
+      )}
+
       {(cardStatus === 'shipped' || order.status === 'shipped') && order.cardToken && !order.cardActivated && (
         <Link
           to={`/activer-carte?carte=${order.cardToken}`}
@@ -185,7 +200,7 @@ export function MyCardOrder() {
       {cardStatus === 'ordered' && !order.cardActivated && (
         <>
           <p className="text-center text-sm text-slate-500">
-            Production gérée par l&apos;équipe Carte Multiservice. Vous recevrez un email à
+            Production gérée par l&apos;équipe Guinée Multiservices. Vous recevrez un email à
             l&apos;expédition.
           </p>
           <p className="text-center text-xs text-slate-400">

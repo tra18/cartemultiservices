@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ClipboardList, LogOut, Settings } from 'lucide-react'
+import { ClipboardList, LogOut, Wallet } from 'lucide-react'
+import { PlatformLogo } from '../PlatformLogo'
+import { PLATFORM_NAME } from '../../constants/brand'
 import { useAdminAuth } from '../../context/AdminAuthContext'
 
 export function AdminLayout() {
@@ -10,12 +12,10 @@ export function AdminLayout() {
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white">
-              <Settings className="h-5 w-5" />
-            </div>
+            <PlatformLogo size="sm" />
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Administration</h1>
-              <p className="text-xs text-slate-500">Production & impression cartes · {adminEmail}</p>
+              <h1 className="text-base font-bold leading-tight text-slate-900">Administration</h1>
+              <p className="text-xs text-slate-500">{PLATFORM_NAME} · {adminEmail}</p>
             </div>
           </div>
           <button
@@ -29,7 +29,7 @@ export function AdminLayout() {
         </div>
       </header>
 
-      <nav className="border-b border-slate-200 bg-white px-4">
+      <nav className="flex gap-1 border-b border-slate-200 bg-white px-4">
         <NavLink
           to="/admin"
           end
@@ -43,6 +43,19 @@ export function AdminLayout() {
         >
           <ClipboardList className="h-4 w-4" />
           Commandes cartes
+        </NavLink>
+        <NavLink
+          to="/admin/finances"
+          className={({ isActive }) =>
+            `inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition ${
+              isActive
+                ? 'border-violet-600 text-violet-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`
+          }
+        >
+          <Wallet className="h-4 w-4" />
+          Finances & retraits
         </NavLink>
       </nav>
 
