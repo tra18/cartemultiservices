@@ -6,7 +6,7 @@ export function CardVisual() {
 
   if (isDigital) {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-green-800 to-emerald-900 p-6 text-white shadow-xl shadow-emerald-200">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-green-800 to-emerald-900 p-4 text-white shadow-xl shadow-emerald-200 sm:p-6">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
         <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-white/5" />
 
@@ -24,7 +24,7 @@ export function CardVisual() {
             <SmartphoneBadge />
           </div>
 
-          <p className="mb-6 font-mono text-lg tracking-widest">{cardNumber}</p>
+          <p className="mb-4 font-mono text-base tracking-widest sm:mb-6 sm:text-lg">{cardNumber}</p>
 
           <div className="flex items-end justify-between">
             <div>
@@ -33,7 +33,7 @@ export function CardVisual() {
             </div>
             <div className="text-right">
               <p className="text-xs text-emerald-100">Solde disponible (GNF)</p>
-              <p className="text-2xl font-bold">{formatCurrency(balance)}</p>
+              <p className="text-xl font-bold sm:text-2xl">{formatCurrency(balance)}</p>
             </div>
           </div>
         </div>
@@ -42,7 +42,7 @@ export function CardVisual() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-green-800 to-emerald-900 p-6 text-white shadow-xl shadow-emerald-200">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-green-800 to-emerald-900 p-4 text-white shadow-xl shadow-emerald-200 sm:p-6">
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
       <div className="absolute -bottom-12 -left-8 h-40 w-40 rounded-full bg-white/5" />
 
@@ -57,16 +57,16 @@ export function CardVisual() {
           <img src={PLATFORM_LOGO} alt="" className="h-10 w-10 rounded-lg object-contain" />
         </div>
 
-        <p className="mb-6 font-mono text-lg tracking-widest">{cardNumber}</p>
+        <p className="mb-4 font-mono text-base tracking-widest sm:mb-6 sm:text-lg">{cardNumber}</p>
 
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs text-emerald-200">Titulaire</p>
-            <p className="font-medium">{holderName}</p>
+            <p className="truncate font-medium">{holderName}</p>
           </div>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-xs text-emerald-200">Solde disponible (GNF)</p>
-            <p className="text-2xl font-bold">{formatCurrency(balance)}</p>
+            <p className="text-xl font-bold sm:text-2xl">{formatCurrency(balance)}</p>
           </div>
         </div>
       </div>

@@ -170,7 +170,7 @@ export function Dashboard() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Où utiliser ma carte
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {CATEGORIES.map(({ key, icon: Icon, color }) => (
               <Link
                 key={key}

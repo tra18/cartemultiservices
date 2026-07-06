@@ -151,7 +151,7 @@ export function OrderCard() {
 
   if (step === 3) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-slate-50 px-6 py-12 text-center">
+      <div className="page-container flex flex-col items-center justify-center text-center">
         <CheckCircle className="h-16 w-16 text-emerald-500" />
         <h1 className="mt-4 text-2xl font-bold text-slate-900">Commande confirmée !</h1>
         <p className="mt-2 text-slate-600">
@@ -215,7 +215,7 @@ export function OrderCard() {
     'w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-slate-50 px-6 py-10">
+    <div className="page-container">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
           <CreditCard className="h-7 w-7" />

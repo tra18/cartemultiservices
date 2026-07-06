@@ -33,7 +33,7 @@ export function MerchantDashboard() {
           <Wallet className="h-5 w-5" />
           <span className="text-sm font-medium">Solde disponible</span>
         </div>
-        <p className="mt-2 text-3xl font-bold">{formatCurrency(available)}</p>
+        <p className="mt-2 text-2xl font-bold sm:text-3xl">{formatCurrency(available)}</p>
         {pending > 0 && (
           <p className="mt-2 text-sm text-emerald-100">
             {formatCurrency(pending)} en attente de retrait
@@ -41,7 +41,7 @@ export function MerchantDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2 text-slate-500">
             <TrendingUp className="h-4 w-4" />

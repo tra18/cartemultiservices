@@ -22,7 +22,7 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center bg-slate-50 px-6 py-12">
+    <div className="page-container-narrow flex flex-col justify-center">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-600 text-white">
           <Settings className="h-7 w-7" />

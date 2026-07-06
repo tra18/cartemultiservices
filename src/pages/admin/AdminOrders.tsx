@@ -46,7 +46,7 @@ export function AdminOrders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Commandes de cartes</h2>
           <p className="mt-1 text-sm text-slate-500">{orders.length} commande(s) au total</p>
@@ -90,13 +90,13 @@ export function AdminOrders() {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {STATUS_FILTERS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
             onClick={() => setFilter(value)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
               filter === value
                 ? 'bg-violet-600 text-white'
                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
@@ -117,7 +117,7 @@ export function AdminOrders() {
             <Link
               key={order.id}
               to={`/admin/commandes/${order.id}`}
-              className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm"
+              className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm sm:flex-row sm:items-center sm:gap-4"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">
                 <Package className="h-5 w-5" />
@@ -130,7 +130,7 @@ export function AdminOrders() {
                   {new Date(order.createdAt).toLocaleDateString('fr-GN')}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
+              <div className="shrink-0 sm:text-right">
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     order.status === 'paid'
