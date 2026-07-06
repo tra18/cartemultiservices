@@ -1,4 +1,9 @@
-import { sendActivationCodeEmail, sendCardShippedEmail, sendWelcomeAccountEmail } from '../services/emailService'
+import {
+  sendActivationCodeEmail,
+  sendAdminOrderNotificationEmail,
+  sendCardShippedEmail,
+  sendWelcomeAccountEmail,
+} from '../services/emailService'
 import type { CardStatus } from '../types/order'
 import type { CardOrder, CardOrderFormData } from '../types/order'
 import type { UserAccount } from '../types/auth'
@@ -80,6 +85,7 @@ export function createCardOrder(userId: string, data: CardOrderFormData): CardOr
 
   sendActivationCodeEmail(safeEmail, safeName, activationCode)
   sendWelcomeAccountEmail(safeEmail, safeName)
+  sendAdminOrderNotificationEmail(safeName, safeEmail, CARD_PRICE, data.deliveryMethod)
 
   const order: CardOrder = {
     id: crypto.randomUUID(),

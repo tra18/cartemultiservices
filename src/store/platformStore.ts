@@ -7,10 +7,21 @@ import type {
   PaymentRequest,
   WithdrawalRequest,
 } from '../types/merchant'
+import {
+  sendAdminWithdrawalNotificationEmail,
+  sendMerchantSaleEmail,
+  sendMerchantWithdrawalProcessedEmail,
+  sendMerchantWithdrawalRequestedEmail,
+} from '../services/emailService'
 
 const MERCHANTS_KEY = 'carte-multiservice-merchants'
 const PAYMENTS_KEY = 'carte-multiservice-payments'
 const PAYMENT_EXPIRY_MS = 15 * 60 * 1000
+const WITHDRAWAL_METHOD_LABELS: Record<WithdrawalRequest['method'], string> = {
+  'orange-money': 'Orange Money',
+  'mobile-money': 'Mobile Money (MTN)',
+  bank: 'Virement bancaire',
+}
 
 const DEMO_MERCHANTS: MerchantAccount[] = [
   {
@@ -212,6 +223,13 @@ export function completeQrPayment(
     sales: [sale, ...merchants[merchantIndex].sales],
   }
   saveMerchants(merchants)
+  sendMerchantSaleEmail(
+    merchants[merchantIndex].email,
+    merchants[merchantIndex].businessName,
+    request.amount,
+    user.fullName,
+    merchants[merchantIndex].balance
+  )
 
   const requests = loadPaymentRequests()
   savePaymentRequests(
@@ -276,6 +294,30 @@ export function requestWithdrawal(
     withdrawals: [withdrawal, ...merchant.withdrawals],
   }
   saveMerchants(merchants)
+  sendMerchantWithdrawalRequestedEmail(
+    merchant.email,
+    merchant.businessName,
+    amount,
+    WITHDRAWAL_METHOD_LABELS[method],
+    accountNumber
+  )
+  sendAdminWithdrawalNotificationEmail(
+    'Nouvelle demande de retrait commerçant — Guinée Multiservices',
+    `Bonjour Admin,
+
+Un commerçant a demandé un retrait.
+
+  Commerce : ${merchant.businessName}
+  Email : ${merchant.email}
+  Montant : ${amount.toLocaleString('fr-GN')} GNF
+  Méthode : ${WITHDRAWAL_METHOD_LABELS[method]}
+  Destination : ${accountNumber}
+
+Action attendue : valider ou refuser la demande dans l'espace administration.
+
+Cordialement,
+Système Guinée Multiservices`
+  )
   return { success: true }
 }
 
@@ -358,6 +400,13 @@ export function processMerchantWithdrawal(
   }
 
   saveMerchants(merchants)
+  sendMerchantWithdrawalProcessedEmail(
+    merchant.email,
+    merchant.businessName,
+    withdrawal.amount,
+    WITHDRAWAL_METHOD_LABELS[withdrawal.method],
+    action === 'complete' ? 'completed' : 'rejected'
+  )
   return { success: true }
 }
 

@@ -4,10 +4,28 @@ export interface SimulatedEmail {
   subject: string
   body: string
   sentAt: string
-  type: 'activation_code' | 'card_shipped' | 'welcome_account' | 'password_reminder' | 'transaction_alert' | 'card_blocked' | 'wallet_added' | 'digital_card'
+  type:
+    | 'activation_code'
+    | 'card_shipped'
+    | 'welcome_account'
+    | 'password_reminder'
+    | 'transaction_alert'
+    | 'card_blocked'
+    | 'wallet_added'
+    | 'digital_card'
+    | 'card_activated'
+    | 'merchant_welcome'
+    | 'merchant_category_added'
+    | 'merchant_sale'
+    | 'merchant_withdrawal_requested'
+    | 'merchant_withdrawal_processed'
+    | 'admin_order_notification'
+    | 'admin_merchant_notification'
+    | 'admin_withdrawal_notification'
 }
 
 const EMAILS_KEY = 'carte-multiservice-emails'
+export const ADMIN_NOTIFICATION_EMAIL = 'admin@carte.gn'
 
 function loadEmails(): SimulatedEmail[] {
   try {
@@ -211,6 +229,182 @@ Cordialement,
 L'équipe Guinée Multiservices`
 
   return sendEmail(to, subject, body, 'digital_card')
+}
+
+export function sendCardActivatedEmail(to: string, fullName: string, cardNumber: string): SimulatedEmail {
+  const subject = 'Votre carte est activée — Guinée Multiservices'
+  const body = `Bonjour ${fullName},
+
+Votre carte multiservice est maintenant activée avec succès.
+
+  Numéro de carte : ${cardNumber}
+
+Vous pouvez désormais :
+  • Recharger votre carte
+  • Payer chez les commerçants partenaires
+  • Ajouter votre carte à votre portefeuille mobile
+
+Si vous n'êtes pas à l'origine de cette activation, contactez immédiatement le support : support@carte.gn
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'card_activated')
+}
+
+export function sendMerchantWelcomeEmail(
+  to: string,
+  businessName: string,
+  categories: string[]
+): SimulatedEmail {
+  const subject = 'Bienvenue sur l’espace commerçant — Guinée Multiservices'
+  const body = `Bonjour ${businessName},
+
+Votre compte commerçant a été créé avec succès.
+
+Catégories activées :
+  • ${categories.join('\n  • ')}
+
+Vous pouvez maintenant :
+  • Générer des paiements QR
+  • Suivre vos ventes
+  • Demander des retraits
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'merchant_welcome')
+}
+
+export function sendMerchantCategoryAddedEmail(
+  to: string,
+  businessName: string,
+  categoryLabel: string,
+  amount: number
+): SimulatedEmail {
+  const subject = 'Nouvelle catégorie activée — Guinée Multiservices'
+  const body = `Bonjour ${businessName},
+
+Votre nouvelle catégorie a bien été ajoutée à votre compte commerçant.
+
+  Catégorie : ${categoryLabel}
+  Montant facturé : ${amount.toLocaleString('fr-GN')} GNF
+
+Cette catégorie est désormais disponible pour vos encaissements.
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'merchant_category_added')
+}
+
+export function sendMerchantSaleEmail(
+  to: string,
+  businessName: string,
+  amount: number,
+  customerName: string,
+  newBalance: number
+): SimulatedEmail {
+  const subject = `Paiement reçu +${amount.toLocaleString('fr-GN')} GNF — Guinée Multiservices`
+  const body = `Bonjour ${businessName},
+
+Un paiement client a bien été encaissé.
+
+  Client : ${customerName}
+  Montant : +${amount.toLocaleString('fr-GN')} GNF
+  Nouveau solde commerçant : ${newBalance.toLocaleString('fr-GN')} GNF
+  Date : ${new Date().toLocaleString('fr-GN')}
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'merchant_sale')
+}
+
+export function sendMerchantWithdrawalRequestedEmail(
+  to: string,
+  businessName: string,
+  amount: number,
+  methodLabel: string,
+  accountNumber: string
+): SimulatedEmail {
+  const subject = 'Demande de retrait enregistrée — Guinée Multiservices'
+  const body = `Bonjour ${businessName},
+
+Votre demande de retrait a bien été enregistrée.
+
+  Montant : ${amount.toLocaleString('fr-GN')} GNF
+  Méthode : ${methodLabel}
+  Destination : ${accountNumber}
+
+Statut : en attente de validation par l'administration.
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'merchant_withdrawal_requested')
+}
+
+export function sendMerchantWithdrawalProcessedEmail(
+  to: string,
+  businessName: string,
+  amount: number,
+  methodLabel: string,
+  status: 'completed' | 'rejected'
+): SimulatedEmail {
+  const approved = status === 'completed'
+  const subject = approved
+    ? 'Retrait commerçant validé — Guinée Multiservices'
+    : 'Retrait commerçant refusé — Guinée Multiservices'
+  const body = `Bonjour ${businessName},
+
+Votre demande de retrait a été ${approved ? 'validée' : 'refusée'}.
+
+  Montant : ${amount.toLocaleString('fr-GN')} GNF
+  Méthode : ${methodLabel}
+  Statut : ${approved ? 'versé' : 'refusé'}
+
+${approved ? 'Le montant sera reçu selon le délai de votre opérateur.' : 'Veuillez vérifier vos informations puis soumettre une nouvelle demande si nécessaire.'}
+
+Cordialement,
+L'équipe Guinée Multiservices`
+
+  return sendEmail(to, subject, body, 'merchant_withdrawal_processed')
+}
+
+export function sendAdminOrderNotificationEmail(
+  customerName: string,
+  customerEmail: string,
+  amount: number,
+  deliveryMethod: string
+): SimulatedEmail {
+  const subject = 'Nouvelle commande client — Guinée Multiservices'
+  const body = `Bonjour Admin,
+
+Une nouvelle commande de carte client a été enregistrée.
+
+  Client : ${customerName}
+  Email : ${customerEmail}
+  Montant : ${amount.toLocaleString('fr-GN')} GNF
+  Livraison : ${deliveryMethod}
+
+Action attendue : produire puis expédier la carte depuis l'espace administration.
+
+Cordialement,
+Système Guinée Multiservices`
+
+  return sendEmail(ADMIN_NOTIFICATION_EMAIL, subject, body, 'admin_order_notification')
+}
+
+export function sendAdminMerchantNotificationEmail(
+  subject: string,
+  body: string
+): SimulatedEmail {
+  return sendEmail(ADMIN_NOTIFICATION_EMAIL, subject, body, 'admin_merchant_notification')
+}
+
+export function sendAdminWithdrawalNotificationEmail(subject: string, body: string): SimulatedEmail {
+  return sendEmail(ADMIN_NOTIFICATION_EMAIL, subject, body, 'admin_withdrawal_notification')
 }
 
 export function getEmailsForAddress(email: string): SimulatedEmail[] {

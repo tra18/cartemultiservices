@@ -1,4 +1,5 @@
 import type { WithdrawalMethod } from '../types/merchant'
+import { sendAdminWithdrawalNotificationEmail } from '../services/emailService'
 
 const TREASURY_KEY = 'carte-multiservice-treasury'
 
@@ -178,6 +179,22 @@ export function requestAdminWithdrawal(
     ],
     adminWithdrawals: [withdrawal, ...state.adminWithdrawals],
   })
+
+  sendAdminWithdrawalNotificationEmail(
+    'Retrait plateforme enregistré — Guinée Multiservices',
+    `Bonjour Admin,
+
+Un retrait plateforme a été enregistré.
+
+  Montant : ${amount.toLocaleString('fr-GN')} GNF
+  Méthode : ${methodLabels[method]}
+  Destination : ${accountNumber.trim()}
+
+Le journal de trésorerie a été mis à jour.
+
+Cordialement,
+Système Guinée Multiservices`
+  )
 
   return { success: true, withdrawal }
 }

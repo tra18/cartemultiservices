@@ -15,6 +15,11 @@ import {
 import type { Category } from '../types'
 import { CATEGORY_LABELS } from '../types'
 import type { MerchantAccount, MerchantRegisterData } from '../types/merchant'
+import {
+  sendAdminMerchantNotificationEmail,
+  sendMerchantCategoryAddedEmail,
+  sendMerchantWelcomeEmail,
+} from '../services/emailService'
 import { calculateAdditionalCategoryPrice, calculateMerchantRegistrationPrice } from '../utils/pricing'
 
 const SESSION_KEY = 'carte-multiservice-merchant-session'
@@ -105,6 +110,26 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       data.businessName,
       data.categories.length
     )
+    sendMerchantWelcomeEmail(
+      newMerchant.email,
+      newMerchant.businessName,
+      newMerchant.categories.map((category) => CATEGORY_LABELS[category])
+    )
+    sendAdminMerchantNotificationEmail(
+      'Nouvelle inscription commerçant — Guinée Multiservices',
+      `Bonjour Admin,
+
+Un nouveau commerçant vient de s'inscrire.
+
+  Commerce : ${newMerchant.businessName}
+  Email : ${newMerchant.email}
+  Téléphone : ${newMerchant.phone}
+  Catégories : ${newMerchant.categories.map((category) => CATEGORY_LABELS[category]).join(', ')}
+  Frais payés : ${registrationFee.toLocaleString('fr-GN')} GNF
+
+Cordialement,
+Système Guinée Multiservices`
+    )
 
     const updated = [...merchants, newMerchant]
     localStorage.setItem(SESSION_KEY, newMerchant.id)
@@ -132,6 +157,26 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       price,
       currentMerchant.businessName,
       CATEGORY_LABELS[category]
+    )
+    sendMerchantCategoryAddedEmail(
+      currentMerchant.email,
+      currentMerchant.businessName,
+      CATEGORY_LABELS[category],
+      price
+    )
+    sendAdminMerchantNotificationEmail(
+      'Catégorie commerçant ajoutée — Guinée Multiservices',
+      `Bonjour Admin,
+
+Une catégorie supplémentaire a été activée pour un commerçant.
+
+  Commerce : ${currentMerchant.businessName}
+  Email : ${currentMerchant.email}
+  Catégorie : ${CATEGORY_LABELS[category]}
+  Frais payés : ${price.toLocaleString('fr-GN')} GNF
+
+Cordialement,
+Système Guinée Multiservices`
     )
 
     const all = loadMerchants()

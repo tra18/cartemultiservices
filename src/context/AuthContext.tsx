@@ -23,6 +23,7 @@ import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
 import { validateCardPin } from '../utils/cardPin'
 import {
   sendCardBlockedEmail,
+  sendCardActivatedEmail,
   sendDigitalCardEmail,
   sendTransactionAlertEmail,
   sendWalletAddedEmail,
@@ -371,6 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return updated
       })
     })
+    sendCardActivatedEmail(currentUser.email, currentUser.fullName, result.cardNumber ?? currentUser.cardNumber)
     return null
   }
 
