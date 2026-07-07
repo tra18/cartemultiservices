@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Package, QrCode, Truck } from 'lucide-react'
-import { EmailPreview } from '../components/EmailPreview'
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../data/deliveryMethods'
 import { useAuth } from '../context/AuthContext'
-import { getLatestActivationEmail, getLatestWelcomeEmail } from '../services/emailService'
 import { getCardOrderByUserId } from '../store/orderStore'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatCurrency } from '../utils/currency'
@@ -12,9 +10,7 @@ import { maskCardNumber } from '../utils/card'
 import { isCardActive, isCardUsable, canEnableDigitalCard, resolveCardStatus } from '../utils/cardStatus'
 
 export function MyCardOrder() {
-  const { currentUser, markCardShipped, refreshCurrentUser } = useAuth()
-  const [showEmail, setShowEmail] = useState(false)
-  const [emailPreview, setEmailPreview] = useState<'activation' | 'welcome'>('activation')
+  const { currentUser, refreshCurrentUser } = useAuth()
 
   useEffect(() => {
     refreshCurrentUser()
@@ -23,9 +19,6 @@ export function MyCardOrder() {
   if (!currentUser) return null
 
   const order = getCardOrderByUserId(currentUser.id)
-  const activationEmail = order ? getLatestActivationEmail(order.email) : undefined
-  const welcomeEmail = order ? getLatestWelcomeEmail(order.email) : undefined
-  const previewEmail = emailPreview === 'welcome' ? welcomeEmail : activationEmail
 
   if (!order && isCardActive(currentUser)) {
     return (
@@ -58,10 +51,6 @@ export function MyCardOrder() {
 
   return (
     <div className="space-y-6">
-      {showEmail && previewEmail && (
-        <EmailPreview email={previewEmail} onClose={() => setShowEmail(false)} />
-      )}
-
       <div>
         <h2 className="text-xl font-bold text-slate-900">Ma commande de carte</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -96,30 +85,6 @@ export function MyCardOrder() {
               })}{' '}
               à <span className="font-medium">{order.email}</span>
             </p>
-            {activationEmail && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailPreview('activation')
-                  setShowEmail(true)
-                }}
-                className="mt-2 text-xs font-medium text-emerald-700 underline hover:text-emerald-900"
-              >
-                [Démo] Voir l&apos;email code activation
-              </button>
-            )}
-            {welcomeEmail && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailPreview('welcome')
-                  setShowEmail(true)
-                }}
-                className="mt-1 block text-xs font-medium text-emerald-700 underline hover:text-emerald-900"
-              >
-                [Démo] Voir l&apos;email de bienvenue
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -199,25 +164,10 @@ export function MyCardOrder() {
       )}
 
       {cardStatus === 'ordered' && !order.cardActivated && (
-        <>
-          <p className="text-center text-sm text-slate-500">
-            Production gérée par l&apos;équipe Guinée Multiservices. Vous recevrez un email à
-            l&apos;expédition.
-          </p>
-          <p className="text-center text-xs text-slate-400">
-            Admin :{' '}
-            <a href="/admin/connexion" className="text-violet-600 underline">
-              portail production
-            </a>
-          </p>
-          <button
-            type="button"
-            onClick={markCardShipped}
-            className="w-full rounded-xl border border-dashed border-slate-300 py-2.5 text-xs text-slate-500 hover:bg-slate-50"
-          >
-            [Démo] Simuler livraison (sans admin)
-          </button>
-        </>
+        <p className="text-center text-sm text-slate-500">
+          Production gérée par l&apos;équipe Guinée Multiservices. Vous recevrez un email à
+          l&apos;expédition.
+        </p>
       )}
     </div>
   )
