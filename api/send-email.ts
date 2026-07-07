@@ -18,20 +18,29 @@ function toHtml(text: string) {
     .replace(/\n/g, '<br />')
 }
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method not allowed' })
+export default async function handler(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, {
+      status: 405,
+      headers: { Allow: 'POST' },
+    })
   }
 
   if (!resendApiKey || !emailFrom) {
-    return res.status(503).json({ error: 'Email service not configured' })
+    return Response.json({ error: 'Email service not configured' }, { status: 503 })
   }
 
-  const { to, subject, text } = (req.body ?? {}) as RequestBody
+  let body: RequestBody
+  try {
+    body = (await request.json()) as RequestBody
+  } catch {
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { to, subject, text } = body
 
   if (!to || !subject || !text) {
-    return res.status(400).json({ error: 'Missing required fields' })
+    return Response.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
   try {
@@ -45,9 +54,9 @@ export default async function handler(req: any, res: any) {
       ...(replyTo ? { replyTo } : {}),
     })
 
-    return res.status(200).json({ ok: true, id: result.data?.id ?? null })
+    return Response.json({ ok: true, id: result.data?.id ?? null })
   } catch (error) {
     console.error('Resend send failed', error)
-    return res.status(500).json({ error: 'Email send failed' })
+    return Response.json({ error: 'Email send failed' }, { status: 500 })
   }
 }
