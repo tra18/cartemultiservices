@@ -8,9 +8,10 @@ import {
   type ReactNode,
 } from 'react'
 
+import { ADMIN_EMAIL } from '../constants/brand'
+
 const SESSION_KEY = 'carte-multiservice-admin-session'
 
-const ADMIN_EMAIL = 'admin@carte.gn'
 const ADMIN_PASSWORD = 'admin123'
 
 interface AdminAuthContextValue {

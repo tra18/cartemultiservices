@@ -1,3 +1,5 @@
+import { ADMIN_EMAIL } from '../constants/brand'
+
 export interface SimulatedEmail {
   id: string
   to: string
@@ -25,7 +27,7 @@ export interface SimulatedEmail {
 }
 
 const EMAILS_KEY = 'carte-multiservice-emails'
-export const ADMIN_NOTIFICATION_EMAIL = 'admin@carte.gn'
+export const ADMIN_NOTIFICATION_EMAIL = ADMIN_EMAIL
 
 interface RealEmailPayload {
   to: string
