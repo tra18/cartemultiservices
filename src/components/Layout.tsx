@@ -2,11 +2,11 @@ import { History, Home, LogOut, PlusCircle, QrCode, ShoppingBag, Store, User } f
 import { Link, Outlet } from 'react-router-dom'
 import { AppShell } from './AppShell'
 import { PlatformLogo } from './PlatformLogo'
-import { PLATFORM_NAME } from '../constants/brand'
+import { PLATFORM_NAME, CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
-  { to: '/', label: 'Accueil', icon: Home, end: true },
+  { to: CLIENT_DASHBOARD_PATH, label: 'Accueil', icon: Home, end: true },
   { to: '/scanner', label: 'Scanner', icon: QrCode },
   { to: '/recharger', label: 'Recharger', icon: PlusCircle },
   { to: '/payer', label: 'Payer', icon: ShoppingBag },

@@ -4,6 +4,7 @@ import { CheckCircle, CreditCard, KeyRound, Mail, QrCode } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getCardOrderByToken, getCardOrderByUserId } from '../store/orderStore'
 import { isCardActive, resolveCardStatus } from '../utils/cardStatus'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { maskCardNumber } from '../utils/card'
 import { pinsMatch } from '../utils/cardPin'
 
@@ -43,7 +44,7 @@ export function ActivateCard() {
             {maskCardNumber(currentUser.cardNumber)}
           </p>
         )}
-        <Link to="/" className="mt-4 inline-block text-indigo-600">Retour à l&apos;accueil</Link>
+        <Link to={CLIENT_DASHBOARD_PATH} className="mt-4 inline-block text-indigo-600">Retour à l&apos;accueil</Link>
       </div>
     )
   }
@@ -91,7 +92,7 @@ export function ActivateCard() {
       return
     }
     setSuccess(true)
-    setTimeout(() => navigate('/'), 2500)
+    setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
   }
 
   if (success) {

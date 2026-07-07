@@ -6,6 +6,7 @@ import { getPaymentRequest } from '../store/platformStore'
 import type { PaymentRequest } from '../types/merchant'
 import { CATEGORY_LABELS } from '../types'
 import { useCardPinGate } from '../hooks/useCardPinGate'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatCurrency } from '../utils/currency'
 
 export function QrPay() {
@@ -66,7 +67,7 @@ export function QrPay() {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(CLIENT_DASHBOARD_PATH)}
           className="mt-4 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white"
         >
           Retour à l&apos;accueil
@@ -80,7 +81,7 @@ export function QrPay() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
         <AlertCircle className="h-12 w-12 text-red-500" />
         <p className="text-slate-600">{error}</p>
-        <Link to="/" className="text-indigo-600 hover:text-indigo-700">
+        <Link to={CLIENT_DASHBOARD_PATH} className="text-indigo-600 hover:text-indigo-700">
           Retour à l&apos;accueil
         </Link>
       </div>
@@ -94,7 +95,7 @@ export function QrPay() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
         <CheckCircle className="h-12 w-12 text-emerald-500" />
         <p className="text-slate-600">Ce paiement a déjà été effectué.</p>
-        <Link to="/" className="text-indigo-600">Retour à l&apos;accueil</Link>
+        <Link to={CLIENT_DASHBOARD_PATH} className="text-indigo-600">Retour à l&apos;accueil</Link>
       </div>
     )
   }
@@ -104,7 +105,7 @@ export function QrPay() {
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
         <AlertCircle className="h-12 w-12 text-amber-500" />
         <p className="text-slate-600">Ce QR code n&apos;est plus valide.</p>
-        <Link to="/" className="text-indigo-600">Retour à l&apos;accueil</Link>
+        <Link to={CLIENT_DASHBOARD_PATH} className="text-indigo-600">Retour à l&apos;accueil</Link>
       </div>
     )
   }
@@ -178,7 +179,7 @@ export function QrPay() {
 
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate(CLIENT_DASHBOARD_PATH)}
         className="mt-3 w-full py-3 text-sm text-slate-500 hover:text-slate-700"
       >
         Annuler

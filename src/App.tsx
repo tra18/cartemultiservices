@@ -37,6 +37,7 @@ import { CardSecurity } from './pages/CardSecurity'
 import { Profile } from './pages/Profile'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { OrderCard } from './pages/OrderCard'
+import { Home } from './pages/Home'
 import { AdminLogin } from './pages/admin/AdminLogin'
 import { AdminOrders } from './pages/admin/AdminOrders'
 import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
@@ -105,6 +106,9 @@ export default function App() {
               <Route path="historique" element={<MerchantHistory />} />
             </Route>
 
+            {/* Page d'accueil publique */}
+            <Route path="/" element={<Home />} />
+
             {/* Espace client — routes publiques */}
             <Route
               path="/commander-carte"
@@ -153,7 +157,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/tableau-de-bord" element={<Dashboard />} />
               <Route path="/recharger" element={<Recharge />} />
               <Route path="/payer" element={<Pay />} />
               <Route path="/carburant" element={<BuyFuel />} />

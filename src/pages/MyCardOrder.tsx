@@ -6,6 +6,7 @@ import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../data/deliveryMethods'
 import { useAuth } from '../context/AuthContext'
 import { getLatestActivationEmail, getLatestWelcomeEmail } from '../services/emailService'
 import { getCardOrderByUserId } from '../store/orderStore'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatCurrency } from '../utils/currency'
 import { maskCardNumber } from '../utils/card'
 import { isCardActive, isCardUsable, canEnableDigitalCard, resolveCardStatus } from '../utils/cardStatus'
@@ -30,7 +31,7 @@ export function MyCardOrder() {
     return (
       <div className="py-12 text-center">
         <p className="text-slate-600">Votre carte est active.</p>
-        <Link to="/" className="mt-4 inline-block text-indigo-600 hover:text-indigo-700">
+        <Link to={CLIENT_DASHBOARD_PATH} className="mt-4 inline-block text-indigo-600 hover:text-indigo-700">
           Retour à l&apos;accueil
         </Link>
       </div>
@@ -156,7 +157,7 @@ export function MyCardOrder() {
           {order.cardNumber && (
             <p className="mt-1 font-mono">{maskCardNumber(order.cardNumber)}</p>
           )}
-          <Link to="/" className="mt-3 inline-block font-medium text-emerald-700 underline">
+          <Link to={CLIENT_DASHBOARD_PATH} className="mt-3 inline-block font-medium text-emerald-700 underline">
             Aller à l&apos;accueil
           </Link>
         </div>

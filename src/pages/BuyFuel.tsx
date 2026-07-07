@@ -12,6 +12,7 @@ import {
   type FuelType,
 } from '../data/fuel'
 import { useCardPinGate } from '../hooks/useCardPinGate'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatCurrency } from '../utils/currency'
 
 export function BuyFuel() {
@@ -61,7 +62,7 @@ export function BuyFuel() {
         return
       }
       setSuccess(true)
-      setTimeout(() => navigate('/'), 2500)
+      setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
     })
   }
 

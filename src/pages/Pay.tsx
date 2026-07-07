@@ -4,6 +4,7 @@ import { Bus, CheckCircle, Fuel, Shirt, ShoppingCart, UtensilsCrossed } from 'lu
 import { getMerchantsForCategory } from '../data/merchants'
 import { useCard } from '../context/CardContext'
 import { useCardPinGate } from '../hooks/useCardPinGate'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import type { Category } from '../types'
 import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS } from '../types'
 
@@ -53,7 +54,7 @@ export function Pay() {
       const ok = pay(category!, merchant, parsedAmount, pin)
       if (ok) {
         setStep('success')
-        setTimeout(() => navigate('/'), 2500)
+        setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
       } else {
         setError('Le paiement a échoué. Vérifiez votre PIN ou votre solde.')
       }

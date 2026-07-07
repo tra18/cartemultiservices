@@ -5,6 +5,7 @@ import { PAYMENT_METHODS } from '../data/paymentMethods'
 import { useAuth } from '../context/AuthContext'
 import { useCard } from '../context/CardContext'
 import { useCardPinGate } from '../hooks/useCardPinGate'
+import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatAmountShort, formatCurrency, MAX_RECHARGE, PRESET_AMOUNTS } from '../utils/currency'
 import type { PaymentMethodId } from '../data/paymentMethods'
 
@@ -44,7 +45,7 @@ export function Recharge() {
       const ok = recharge(selectedAmount, selectedMethod.label, pin)
       if (ok) {
         setSuccess(true)
-        setTimeout(() => navigate('/'), 2000)
+        setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2000)
       } else {
         setError('La recharge a échoué. Vérifiez votre PIN.')
       }
