@@ -27,6 +27,12 @@ export interface SimulatedEmail {
 const EMAILS_KEY = 'carte-multiservice-emails'
 export const ADMIN_NOTIFICATION_EMAIL = 'admin@carte.gn'
 
+interface RealEmailPayload {
+  to: string
+  subject: string
+  text: string
+}
+
 function loadEmails(): SimulatedEmail[] {
   try {
     const stored = localStorage.getItem(EMAILS_KEY)
@@ -41,6 +47,18 @@ function saveEmails(emails: SimulatedEmail[]) {
   localStorage.setItem(EMAILS_KEY, JSON.stringify(emails))
 }
 
+function queueRealEmail(payload: RealEmailPayload) {
+  if (typeof window === 'undefined') return
+
+  void fetch('/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch((error) => {
+    console.error('Email send failed', error)
+  })
+}
+
 function sendEmail(to: string, subject: string, body: string, type: SimulatedEmail['type']) {
   const email: SimulatedEmail = {
     id: crypto.randomUUID(),
@@ -52,6 +70,7 @@ function sendEmail(to: string, subject: string, body: string, type: SimulatedEma
   }
   const emails = loadEmails()
   saveEmails([email, ...emails])
+  queueRealEmail({ to, subject, text: body })
   return email
 }
 
