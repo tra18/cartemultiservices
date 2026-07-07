@@ -1,4 +1,4 @@
-const { Resend } = require('resend')
+import { Resend } from 'resend'
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom = process.env.EMAIL_FROM
@@ -12,7 +12,19 @@ function toHtml(text) {
     .replace(/\n/g, '<br />')
 }
 
-module.exports = async (req, res) => {
+function parseBody(req) {
+  if (!req.body) return {}
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body)
+    } catch {
+      return {}
+    }
+  }
+  return req.body
+}
+
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })
@@ -22,7 +34,7 @@ module.exports = async (req, res) => {
     return res.status(503).json({ error: 'Email service not configured' })
   }
 
-  const { to, subject, text } = req.body ?? {}
+  const { to, subject, text } = parseBody(req)
 
   if (!to || !subject || !text) {
     return res.status(400).json({ error: 'Missing required fields' })
@@ -38,6 +50,11 @@ module.exports = async (req, res) => {
       html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${toHtml(text)}</div>`,
       ...(replyTo ? { replyTo } : {}),
     })
+
+    if (result.error) {
+      console.error('Resend API error', result.error)
+      return res.status(500).json({ error: result.error.message ?? 'Email send failed' })
+    }
 
     return res.status(200).json({ ok: true, id: result.data?.id ?? null })
   } catch (error) {
