@@ -1,16 +1,10 @@
-import { Resend } from 'resend'
+const { Resend } = require('resend')
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom = process.env.EMAIL_FROM
 const replyTo = process.env.EMAIL_REPLY_TO
 
-type RequestBody = {
-  to?: string
-  subject?: string
-  text?: string
-}
-
-function toHtml(text: string) {
+function toHtml(text) {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -18,7 +12,7 @@ function toHtml(text: string) {
     .replace(/\n/g, '<br />')
 }
 
-export default async function handler(req: any, res: any) {
+module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })
@@ -28,7 +22,7 @@ export default async function handler(req: any, res: any) {
     return res.status(503).json({ error: 'Email service not configured' })
   }
 
-  const { to, subject, text } = (req.body ?? {}) as RequestBody
+  const { to, subject, text } = req.body ?? {}
 
   if (!to || !subject || !text) {
     return res.status(400).json({ error: 'Missing required fields' })

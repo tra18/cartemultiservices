@@ -9,13 +9,12 @@
       }
     },
     {
-      "src": "api/**/*.ts",
+      "src": "api/send-email.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api/send-email", "dest": "/api/send-email.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
