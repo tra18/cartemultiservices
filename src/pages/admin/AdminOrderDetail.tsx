@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
 import {
   getCardOrderById,
+  hydrateOrdersFromServer,
   markOrderShipped,
   produceCard,
 } from '../../store/orderStore'
@@ -21,10 +22,41 @@ export function AdminOrderDetail() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const [order, setOrder] = useState(() => (orderId ? getCardOrderById(orderId) : undefined))
+  const [loading, setLoading] = useState(!order)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
-  if (!orderId || !order) {
+  useEffect(() => {
+    if (!orderId) return
+
+    void (async () => {
+      setLoading(true)
+      await hydrateOrdersFromServer()
+      setOrder(getCardOrderById(orderId))
+      setLoading(false)
+    })()
+  }, [orderId])
+
+  if (!orderId) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-slate-600">Commande introuvable</p>
+        <Link to="/admin" className="mt-4 inline-block text-violet-600">
+          Retour aux commandes
+        </Link>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-slate-600">Chargement de la commande…</p>
+      </div>
+    )
+  }
+
+  if (!order) {
     return (
       <div className="py-12 text-center">
         <p className="text-slate-600">Commande introuvable</p>

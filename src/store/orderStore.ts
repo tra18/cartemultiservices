@@ -11,6 +11,7 @@ import { generateCardNumber, generateCardToken } from '../utils/card'
 import { CARD_PRICE } from '../utils/pricing'
 import { recordCardOrderRevenue } from './treasuryStore'
 import { normalizeEmail, sanitizeText } from '../utils/validation'
+import { mergeOrders, syncOrderToServer } from '../services/orderServer'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
 const USERS_KEY = 'carte-multiservice-users'
@@ -48,6 +49,20 @@ export function loadCardOrders(): CardOrder[] {
 
 export function saveCardOrders(orders: CardOrder[]) {
   saveJson(ORDERS_KEY, orders)
+}
+
+export async function hydrateOrdersFromServer() {
+  try {
+    const response = await fetch('/api/orders')
+    if (!response.ok) return loadCardOrders()
+
+    const serverOrders = (await response.json()) as CardOrder[]
+    const merged = mergeOrders(loadCardOrders(), serverOrders)
+    saveCardOrders(merged)
+    return merged
+  } catch {
+    return loadCardOrders()
+  }
 }
 
 export function getCardOrderById(orderId: string): CardOrder | undefined {
@@ -108,6 +123,7 @@ export function createCardOrder(userId: string, data: CardOrderFormData): CardOr
   const orders = loadCardOrders()
   saveCardOrders([order, ...orders])
   recordCardOrderRevenue(order.id, CARD_PRICE, safeName)
+  void syncOrderToServer(order)
   return order
 }
 
@@ -140,6 +156,7 @@ export function produceCard(
 
   orders[index] = updated
   saveCardOrders(orders)
+  void syncOrderToServer(updated)
   return { success: true, order: updated }
 }
 
@@ -167,6 +184,7 @@ export function markOrderShipped(
 
   sendCardShippedEmail(order.email, order.userName)
   syncUserCardStatus(order.userId, 'shipped', order.cardNumber)
+  void syncOrderToServer(updated)
 
   return { success: true, order: updated }
 }

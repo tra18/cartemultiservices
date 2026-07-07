@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Package, Search } from 'lucide-react'
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
-import { loadCardOrders } from '../../store/orderStore'
+import { hydrateOrdersFromServer, loadCardOrders } from '../../store/orderStore'
 import type { CardOrderStatus } from '../../types/order'
 import { formatCurrency } from '../../utils/currency'
 import { maskCardNumber } from '../../utils/card'
@@ -19,8 +19,18 @@ export function AdminOrders() {
   const [filter, setFilter] = useState<'all' | CardOrderStatus>('all')
   const [search, setSearch] = useState('')
   const [orders, setOrders] = useState(() => loadCardOrders())
+  const [loading, setLoading] = useState(true)
 
-  const refresh = () => setOrders(loadCardOrders())
+  const refresh = async () => {
+    setLoading(true)
+    const merged = await hydrateOrdersFromServer()
+    setOrders(merged)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    void refresh()
+  }, [])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -53,10 +63,11 @@ export function AdminOrders() {
         </div>
         <button
           type="button"
-          onClick={refresh}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white"
+          onClick={() => void refresh()}
+          disabled={loading}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-white disabled:opacity-50"
         >
-          Actualiser
+          {loading ? 'Chargement…' : 'Actualiser'}
         </button>
       </div>
 

@@ -11,10 +11,15 @@
     {
       "src": "api/send-email.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/orders.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     { "src": "/api/send-email", "dest": "/api/send-email.js" },
+    { "src": "/api/orders", "dest": "/api/orders.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
