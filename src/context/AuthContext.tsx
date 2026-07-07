@@ -96,7 +96,7 @@ function loadUsers(): UserAccount[] {
   } catch {
     /* ignore */
   }
-  return [DEMO_USER]
+  return import.meta.env.DEV ? [DEMO_USER] : []
 }
 
 function saveUsers(users: UserAccount[]) {

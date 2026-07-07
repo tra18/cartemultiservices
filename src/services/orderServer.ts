@@ -1,10 +1,11 @@
 import type { CardOrder } from '../types/order'
+import { getAdminAuthHeaders, getWriteApiHeaders } from './apiClient'
 
 export async function syncOrderToServer(order: CardOrder) {
   try {
     await fetch('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getWriteApiHeaders() },
       body: JSON.stringify(order),
     })
   } catch (error) {
@@ -14,7 +15,9 @@ export async function syncOrderToServer(order: CardOrder) {
 
 export async function fetchServerOrders(): Promise<CardOrder[]> {
   try {
-    const response = await fetch('/api/orders')
+    const response = await fetch('/api/orders', {
+      headers: getAdminAuthHeaders(),
+    })
     if (!response.ok) return []
     return (await response.json()) as CardOrder[]
   } catch (error) {

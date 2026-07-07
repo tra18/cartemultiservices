@@ -5,11 +5,18 @@ import { AuthLayout } from '../components/AuthLayout'
 import { useAuth } from '../context/AuthContext'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 
+function getSafeRedirectPath(path: string | undefined): string {
+  if (!path || !path.startsWith('/') || path.startsWith('//')) {
+    return CLIENT_DASHBOARD_PATH
+  }
+  return path
+}
+
 export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? CLIENT_DASHBOARD_PATH
+  const from = getSafeRedirectPath((location.state as { from?: string } | null)?.from)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)

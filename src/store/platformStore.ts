@@ -96,16 +96,22 @@ function normalizeMerchant(raw: MerchantAccount & { category?: Category }): Merc
 
 export function loadMerchants(): MerchantAccount[] {
   const stored = loadJson<(MerchantAccount & { category?: Category })[] | null>(MERCHANTS_KEY, null)
+  const demoMerchants = import.meta.env.DEV ? DEMO_MERCHANTS : []
 
   if (!stored || stored.length === 0) {
-    saveJson(MERCHANTS_KEY, DEMO_MERCHANTS)
-    return DEMO_MERCHANTS
+    if (demoMerchants.length > 0) {
+      saveJson(MERCHANTS_KEY, demoMerchants)
+      return demoMerchants
+    }
+    return []
   }
 
   const merged = [...stored.map(normalizeMerchant)]
-  for (const demo of DEMO_MERCHANTS) {
-    if (!merged.some((m) => m.email.toLowerCase() === demo.email.toLowerCase())) {
-      merged.push(demo)
+  if (import.meta.env.DEV) {
+    for (const demo of DEMO_MERCHANTS) {
+      if (!merged.some((m) => m.email.toLowerCase() === demo.email.toLowerCase())) {
+        merged.push(demo)
+      }
     }
   }
   return merged.map((m) => ({ ...m, registrationPaid: m.registrationPaid ?? true }))

@@ -1,4 +1,14 @@
 import { Resend } from 'resend'
+import { ALLOWED_EMAIL_TYPES, buildEmail } from './_lib/emailTemplates.js'
+import {
+  getApiSecret,
+  getClientIp,
+  getRedis,
+  isValidEmail,
+  parseBody,
+  rateLimit,
+  verifyApiSecret,
+} from './_lib/security.js'
 
 const resendApiKey = process.env.RESEND_API_KEY
 const emailFrom = process.env.EMAIL_FROM
@@ -12,42 +22,55 @@ function toHtml(text) {
     .replace(/\n/g, '<br />')
 }
 
-function parseBody(req) {
-  if (!req.body) return {}
-  if (typeof req.body === 'string') {
-    try {
-      return JSON.parse(req.body)
-    } catch {
-      return {}
-    }
-  }
-  return req.body
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  if (!getApiSecret()) {
+    return res.status(503).json({ error: 'API not configured' })
+  }
+
+  if (!verifyApiSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   if (!resendApiKey || !emailFrom) {
     return res.status(503).json({ error: 'Email service not configured' })
   }
 
-  const { to, subject, text } = parseBody(req)
+  const redis = getRedis()
+  const ip = getClientIp(req)
+  if (redis) {
+    const allowed = await rateLimit(redis, `rate:send-email:${ip}`, 40, 3600)
+    if (!allowed) {
+      return res.status(429).json({ error: 'Too many requests' })
+    }
+  }
 
-  if (!to || !subject || !text) {
-    return res.status(400).json({ error: 'Missing required fields' })
+  const { type, data } = parseBody(req)
+  if (!type || !ALLOWED_EMAIL_TYPES.has(type)) {
+    return res.status(400).json({ error: 'Invalid email type' })
+  }
+
+  const email = buildEmail(type, data ?? {})
+  if (!email?.to || !email.subject || !email.text) {
+    return res.status(400).json({ error: 'Invalid email payload' })
+  }
+
+  if (!isValidEmail(email.to)) {
+    return res.status(400).json({ error: 'Invalid recipient' })
   }
 
   try {
     const resend = new Resend(resendApiKey)
     const result = await resend.emails.send({
       from: emailFrom,
-      to: [to],
-      subject,
-      text,
-      html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${toHtml(text)}</div>`,
+      to: [email.to],
+      subject: email.subject,
+      text: email.text,
+      html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${toHtml(email.text)}</div>`,
       ...(replyTo ? { replyTo } : {}),
     })
 

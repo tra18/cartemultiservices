@@ -26,7 +26,7 @@ export function AdminLayout() {
       </div>
       <button
         type="button"
-        onClick={logout}
+        onClick={() => void logout()}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600"
         title="Déconnexion"
       >

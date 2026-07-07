@@ -2,12 +2,11 @@ import { type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAdminAuth } from '../../context/AdminAuthContext'
-
-const SESSION_KEY = 'carte-multiservice-admin-session'
+import { ADMIN_TOKEN_KEY } from '../../services/apiClient'
 
 function hasAdminSession(): boolean {
   try {
-    return Boolean(localStorage.getItem(SESSION_KEY))
+    return Boolean(sessionStorage.getItem(ADMIN_TOKEN_KEY))
   } catch {
     return false
   }

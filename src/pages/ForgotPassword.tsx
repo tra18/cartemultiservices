@@ -34,12 +34,9 @@ export function ForgotPassword() {
     }
 
     const user = findUserByEmail(cleanEmail)
-    if (!user) {
-      setError('Aucun compte trouvé avec cet email. Avez-vous commandé votre carte ?')
-      return
+    if (user) {
+      sendPasswordReminderEmail(cleanEmail, user.fullName)
     }
-
-    sendPasswordReminderEmail(cleanEmail, user.fullName)
     setSent(true)
   }
 

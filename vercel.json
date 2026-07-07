@@ -15,12 +15,31 @@
     {
       "src": "api/orders.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/admin-auth.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     { "src": "/api/send-email", "dest": "/api/send-email.js" },
     { "src": "/api/orders", "dest": "/api/orders.js" },
+    { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        }
+      ]
+    }
   ]
 }
