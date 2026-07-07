@@ -3,14 +3,12 @@ import { Redis } from '@upstash/redis'
 const ORDERS_KEY = 'card-orders'
 
 function getRedis() {
-  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN
-
-  if (!url || !token) {
+  try {
+    // UPSTASH_* (Upstash direct) ou KV_* (intégration Vercel Storage)
+    return Redis.fromEnv()
+  } catch {
     return null
   }
-
-  return new Redis({ url, token })
 }
 
 function parseBody(req) {
