@@ -108,6 +108,24 @@ Cordialement,
 L'équipe Guinée Multiservices`,
       }
 
+    case 'client_login_alert':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Nouvelle connexion — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Une connexion à votre compte a été détectée.
+
+Appareil : ${sanitize(data.userAgent, 120)}
+Adresse IP : ${sanitize(data.ip, 45)}
+Date : ${sanitize(data.date, 40)}
+
+Si ce n'était pas vous, contactez ${SUPPORT_EMAIL} immédiatement.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
     case 'wallet_added': {
       const walletName = data.wallet === 'apple' ? 'Apple Wallet' : 'Google Wallet'
       return {
@@ -259,6 +277,7 @@ export const ALLOWED_EMAIL_TYPES = new Set([
   'card_shipped',
   'transaction_alert',
   'card_blocked',
+  'client_login_alert',
   'wallet_added',
   'digital_card',
   'card_activated',

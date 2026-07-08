@@ -122,7 +122,7 @@ export function OrderCard() {
 
     setSubmitting(true)
 
-    const result = orderCard({
+    const result = await orderCard({
       fullName,
       email,
       phone,

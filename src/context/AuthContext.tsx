@@ -16,7 +16,7 @@ import {
   createCardOrder,
   simulateOrderReady,
 } from '../store/orderStore'
-import { isEmailTaken, validateAndSanitizeOrderData } from '../utils/orderSecurity'
+import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
 import { generateCardNumber } from '../utils/card'
 import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
@@ -27,59 +27,14 @@ import {
   sendDigitalCardEmail,
   sendTransactionAlertEmail,
 } from '../services/emailService'
-
-const USERS_KEY = 'carte-multiservice-users'
-const SESSION_KEY = 'carte-multiservice-session'
-
-function createDemoTransactions(): Transaction[] {
-  const now = Date.now()
-  return [
-    {
-      id: '1',
-      type: 'recharge',
-      amount: 500_000,
-      date: new Date(now - 86400000 * 3).toISOString(),
-      method: 'Orange Money',
-    },
-    {
-      id: '2',
-      type: 'paiement',
-      category: 'restaurants',
-      merchant: 'Riviera Restaurant',
-      amount: 85_000,
-      date: new Date(now - 86400000 * 2).toISOString(),
-    },
-    {
-      id: '3',
-      type: 'paiement',
-      category: 'transport',
-      merchant: 'SOTRA',
-      amount: 15_000,
-      date: new Date(now - 86400000).toISOString(),
-    },
-    {
-      id: '4',
-      type: 'paiement',
-      category: 'courses',
-      merchant: 'Prodimar',
-      amount: 320_000,
-      date: new Date(now - 3600000 * 5).toISOString(),
-    },
-  ]
-}
-
-const DEMO_USER: UserAccount = {
-  id: 'demo-user',
-  email: 'demo@carte.gn',
-  password: 'demo123',
-  fullName: 'Mamadou Diallo',
-  phone: '+224 620 00 00 00',
-  cardNumber: '6245 8810 4521 7893',
-  balance: 1_500_000,
-  transactions: createDemoTransactions(),
-  cardStatus: 'active',
-  cardPin: '5678',
-}
+import {
+  checkEmailAvailable,
+  fetchClientSession,
+  loginClient,
+  logoutClient,
+  patchClientProfile,
+  registerClient,
+} from '../services/clientAuth'
 
 function normalizeUser(user: UserAccount): UserAccount {
   return {
@@ -88,27 +43,30 @@ function normalizeUser(user: UserAccount): UserAccount {
   }
 }
 
-function loadUsers(): UserAccount[] {
-  try {
-    const stored = localStorage.getItem(USERS_KEY)
-    if (stored) return (JSON.parse(stored) as UserAccount[]).map(normalizeUser)
-  } catch {
-    /* ignore */
+function toProfilePatch(user: UserAccount): Partial<UserAccount> {
+  return {
+    fullName: user.fullName,
+    phone: user.phone,
+    cardNumber: user.cardNumber,
+    balance: user.balance,
+    transactions: user.transactions,
+    cardStatus: user.cardStatus,
+    cardPin: user.cardPin,
+    pinFailedAttempts: user.pinFailedAttempts,
+    walletAppleAddedAt: user.walletAppleAddedAt,
+    walletGoogleAddedAt: user.walletGoogleAddedAt,
+    digitalCardNumber: user.digitalCardNumber,
+    digitalCardEnabledAt: user.digitalCardEnabledAt,
   }
-  return import.meta.env.DEV ? [DEMO_USER] : []
-}
-
-function saveUsers(users: UserAccount[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
 }
 
 interface AuthContextValue {
   currentUser: UserAccount | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => string | null
-  register: (data: RegisterData) => string | null
-  logout: () => void
+  login: (email: string, password: string) => Promise<string | null>
+  register: (data: RegisterData) => Promise<string | null>
+  logout: () => Promise<void>
   updateBalance: (amount: number) => void
   addTransaction: (transaction: Transaction) => void
   pay: (
@@ -122,7 +80,7 @@ interface AuthContextValue {
   recharge: (amount: number, method: string, pin: string) => boolean
   orderCard: (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
-  ) => { success: boolean; error?: string; order?: CardOrder }
+  ) => Promise<{ success: boolean; error?: string; order?: CardOrder }>
   activateCard: (code: string, cardPin: string, cardToken?: string) => string | null
   verifyCardPin: (pin: string) => string | null
   blockCard: () => string | null
@@ -130,89 +88,61 @@ interface AuthContextValue {
   addToMobileWallet: (wallet: 'apple' | 'google') => string | null
   enableDigitalCard: (pin: string) => string | null
   markCardShipped: () => void
-  refreshCurrentUser: () => void
+  refreshCurrentUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<UserAccount[]>(loadUsers)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    saveUsers(users)
-  }, [users])
-
-  useEffect(() => {
-    const sessionId = localStorage.getItem(SESSION_KEY)
-    if (sessionId) {
-      const allUsers = loadUsers()
-      const user = allUsers.find((u) => u.id === sessionId)
-      if (user) {
-        setUsers(allUsers)
-        setCurrentUser(user)
-      }
+    let cancelled = false
+    fetchClientSession()
+      .then((user) => {
+        if (!cancelled && user) setCurrentUser(normalizeUser(user))
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => {
+      cancelled = true
     }
-    setIsLoading(false)
   }, [])
 
-  const syncCurrentUser = useCallback((updatedUsers: UserAccount[], userId: string) => {
-    const user = updatedUsers.find((u) => u.id === userId) ?? null
-    setCurrentUser(user)
-    return user
-  }, [])
+  const updateUser = useCallback(
+    (userId: string, updater: (user: UserAccount) => UserAccount) => {
+      setCurrentUser((prev) => {
+        if (!prev || prev.id !== userId) return prev
+        const updated = normalizeUser(updater(prev))
+        void patchClientProfile(toProfilePatch(updated))
+        return updated
+      })
+    },
+    []
+  )
 
-  const login = (email: string, password: string): string | null => {
-    const allUsers = loadUsers()
-    const user = allUsers.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    )
-    if (!user) return 'Email ou mot de passe incorrect'
-    setUsers(allUsers)
-    setCurrentUser(user)
-    localStorage.setItem(SESSION_KEY, user.id)
+  const login = async (email: string, password: string): Promise<string | null> => {
+    const result = await loginClient(email, password)
+    if (result.error || !result.user) return result.error ?? 'Connexion échouée'
+    setCurrentUser(normalizeUser(result.user))
     return null
   }
 
-  const register = (data: RegisterData): string | null => {
-    if (users.some((u) => u.email.toLowerCase() === data.email.toLowerCase())) {
-      return 'Cet email est déjà utilisé'
-    }
+  const register = async (data: RegisterData): Promise<string | null> => {
     if (data.password.length < 6) {
       return 'Le mot de passe doit contenir au moins 6 caractères'
     }
-
-    const newUser: UserAccount = {
-      id: crypto.randomUUID(),
-      email: data.email,
-      password: data.password,
-      fullName: data.fullName,
-      phone: data.phone,
-      cardNumber: 'En attente de carte',
-      balance: 0,
-      transactions: [],
-      cardStatus: 'none',
-    }
-
-    const updated = [...users, newUser]
-    setUsers(updated)
-    setCurrentUser(newUser)
-    localStorage.setItem(SESSION_KEY, newUser.id)
+    const result = await registerClient(data)
+    if (result.error || !result.user) return result.error ?? 'Inscription échouée'
+    setCurrentUser(normalizeUser(result.user))
     return null
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await logoutClient()
     setCurrentUser(null)
-    localStorage.removeItem(SESSION_KEY)
-  }
-
-  const updateUser = (userId: string, updater: (user: UserAccount) => UserAccount) => {
-    setUsers((prev) => {
-      const updated = prev.map((u) => (u.id === userId ? updater(u) : u))
-      syncCurrentUser(updated, userId)
-      return updated
-    })
   }
 
   const requireUsableCard = (): string | null => {
@@ -242,9 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateUser(currentUser.id, (user) => ({
         ...user,
         pinFailedAttempts: attempts,
-        ...(attempts >= MAX_PIN_ATTEMPTS
-          ? { cardStatus: 'blocked' as const }
-          : {}),
+        ...(attempts >= MAX_PIN_ATTEMPTS ? { cardStatus: 'blocked' as const } : {}),
       }))
       if (attempts >= MAX_PIN_ATTEMPTS) {
         sendCardBlockedEmail(currentUser.email, currentUser.fullName)
@@ -345,28 +273,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!result.success) return result.error ?? 'Activation échouée'
 
     flushSync(() => {
-      setUsers((prev) => {
-        const merged = loadUsers().map((stored) => {
-          const fromState = prev.find((u) => u.id === stored.id)
-          return fromState ?? stored
+      setCurrentUser((prev) => {
+        if (!prev || prev.id !== userId) return prev
+        const updated = normalizeUser({
+          ...prev,
+          cardStatus: 'active',
+          cardNumber: result.cardNumber ?? prev.cardNumber,
+          cardPin,
+          pinFailedAttempts: 0,
         })
-        for (const u of prev) {
-          if (!merged.some((m) => m.id === u.id)) merged.push(u)
-        }
-
-        const updated = merged.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                cardStatus: 'active' as const,
-                cardNumber: result.cardNumber ?? u.cardNumber,
-                cardPin,
-                pinFailedAttempts: 0,
-              }
-            : u
-        )
-        saveUsers(updated)
-        syncCurrentUser(updated, userId)
+        void patchClientProfile(toProfilePatch(updated))
         return updated
       })
     })
@@ -374,9 +290,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  const orderCard = (
+  const orderCard = async (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
-  ): { success: boolean; error?: string; order?: CardOrder } => {
+  ): Promise<{ success: boolean; error?: string; order?: CardOrder }> => {
     const validated = validateAndSanitizeOrderData({
       ...data,
       needsAddress: data.needsAddress ?? false,
@@ -389,38 +305,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const safeData = validated.data
 
-    if (isEmailTaken(safeData.email, users.map((u) => u.email))) {
+    const emailAvailable = await checkEmailAvailable(safeData.email)
+    if (!emailAvailable) {
       return { success: false, error: 'Cet email est déjà utilisé' }
     }
 
-    const newUser: UserAccount = {
-      id: crypto.randomUUID(),
+    const registration = await registerClient({
       email: safeData.email,
       password: safeData.password,
       fullName: safeData.fullName,
       phone: safeData.phone,
-      cardNumber: 'En attente de carte',
-      balance: 0,
-      transactions: [],
       cardStatus: 'ordered',
+    })
+
+    if (registration.error || !registration.user) {
+      return { success: false, error: registration.error ?? 'Création de compte échouée' }
     }
 
-    const order = createCardOrder(newUser.id, safeData)
-    const updated = [...users, newUser]
-    setUsers(updated)
-    setCurrentUser(newUser)
-    localStorage.setItem(SESSION_KEY, newUser.id)
+    const order = createCardOrder(registration.user.id, safeData)
+    setCurrentUser(normalizeUser(registration.user))
     resetRateLimit()
     return { success: true, order }
   }
 
-  const refreshCurrentUser = useCallback(() => {
-    const sessionId = localStorage.getItem(SESSION_KEY)
-    if (!sessionId) return
-    const allUsers = loadUsers()
-    const user = allUsers.find((u) => u.id === sessionId) ?? null
-    setUsers(allUsers)
-    setCurrentUser(user)
+  const refreshCurrentUser = useCallback(async () => {
+    const user = await fetchClientSession()
+    setCurrentUser(user ? normalizeUser(user) : null)
   }, [])
 
   const markCardShipped = () => {

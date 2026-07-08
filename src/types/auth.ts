@@ -4,7 +4,8 @@ import type { CardStatus } from './order'
 export interface UserAccount {
   id: string
   email: string
-  password: string
+  /** @deprecated Jamais renvoyé par le serveur — auth côté API uniquement */
+  password?: string
   fullName: string
   phone: string
   cardNumber: string

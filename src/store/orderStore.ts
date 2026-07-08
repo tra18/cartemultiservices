@@ -1,14 +1,13 @@
 import type { CardStatus } from '../types/order'
 import type { CardOrder, CardOrderFormData } from '../types/order'
-import type { UserAccount } from '../types/auth'
 import { generateCardNumber, generateCardToken } from '../utils/card'
 import { CARD_PRICE } from '../utils/pricing'
 import { recordCardOrderRevenue } from './treasuryStore'
 import { normalizeEmail, sanitizeText } from '../utils/validation'
 import { mergeOrders, fetchServerOrders, syncOrderToServer } from '../services/orderServer'
+import { patchClientProfile } from '../services/clientAuth'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
-const USERS_KEY = 'carte-multiservice-users'
 
 function loadJson<T>(key: string, fallback: T): T {
   try {
@@ -69,17 +68,11 @@ export function getCardOrderByToken(cardToken: string): CardOrder | undefined {
   return loadCardOrders().find((o) => o.cardToken?.toUpperCase() === token)
 }
 
-function syncUserCardStatus(userId: string, cardStatus: CardStatus, cardNumber?: string) {
-  const users = loadJson<UserAccount[]>(USERS_KEY, [])
-  const updated = users.map((u) => {
-    if (u.id !== userId) return u
-    return {
-      ...u,
-      cardStatus,
-      ...(cardNumber ? { cardNumber } : {}),
-    }
+function syncUserCardStatus(_userId: string, cardStatus: CardStatus, cardNumber?: string) {
+  void patchClientProfile({
+    cardStatus,
+    ...(cardNumber ? { cardNumber } : {}),
   })
-  saveJson(USERS_KEY, updated)
 }
 
 export function createCardOrder(userId: string, data: CardOrderFormData): CardOrder {
