@@ -19,12 +19,17 @@
     {
       "src": "api/admin-auth.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/wallet.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     { "src": "/api/send-email", "dest": "/api/send-email.js" },
     { "src": "/api/orders", "dest": "/api/orders.js" },
     { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
+    { "src": "/api/wallet", "dest": "/api/wallet.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],

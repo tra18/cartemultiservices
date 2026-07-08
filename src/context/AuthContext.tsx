@@ -26,7 +26,6 @@ import {
   sendCardActivatedEmail,
   sendDigitalCardEmail,
   sendTransactionAlertEmail,
-  sendWalletAddedEmail,
 } from '../services/emailService'
 
 const USERS_KEY = 'carte-multiservice-users'
@@ -310,7 +309,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...user,
       ...(wallet === 'apple' ? { walletAppleAddedAt: now } : { walletGoogleAddedAt: now }),
     }))
-    sendWalletAddedEmail(currentUser.email, currentUser.fullName, wallet)
     return null
   }
 

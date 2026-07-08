@@ -13,6 +13,7 @@ import {
   isPhysicalCardActive,
   resolveCardStatus,
 } from '../utils/cardStatus'
+import { provisionAppleWallet, provisionGoogleWallet } from '../services/walletService'
 import type { MobileWalletKind } from '../utils/mobileWallet'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,8 +46,22 @@ export function Profile() {
   const displayNumber = getEffectiveCardNumber(currentUser)
 
   const handleAddWallet = async (wallet: MobileWalletKind): Promise<string | null> => {
-    await new Promise((r) => setTimeout(r, 1200))
-    return addToMobileWallet(wallet)
+    try {
+      const input = {
+        userId: currentUser.id,
+        email: currentUser.email,
+        fullName: currentUser.fullName,
+        cardNumber: displayNumber,
+      }
+      if (wallet === 'apple') {
+        await provisionAppleWallet(input)
+      } else {
+        await provisionGoogleWallet(input)
+      }
+      return addToMobileWallet(wallet)
+    } catch (error) {
+      return error instanceof Error ? error.message : 'Échec de l’ajout au portefeuille'
+    }
   }
 
   const statusLabel = currentUser.cardStatus === 'blocked'
