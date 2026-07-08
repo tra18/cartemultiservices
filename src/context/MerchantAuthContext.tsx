@@ -20,6 +20,7 @@ import {
   sendMerchantCategoryAddedEmail,
   sendMerchantWelcomeEmail,
 } from '../services/emailService'
+import { fetchFinanceMerchant, upsertFinanceMerchant } from '../services/financeServer'
 import { calculateAdditionalCategoryPrice, calculateMerchantRegistrationPrice } from '../utils/pricing'
 
 const SESSION_KEY = 'carte-multiservice-merchant-session'
@@ -31,7 +32,7 @@ interface MerchantAuthContextValue {
   login: (email: string, password: string) => string | null
   register: (data: MerchantRegisterData) => string | null
   logout: () => void
-  refreshMerchant: () => void
+  refreshMerchant: () => Promise<void>
   addCategory: (category: Category, paymentMethod: string) => string | null
 }
 
@@ -54,16 +55,29 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       if (merchant) {
         setMerchants(all)
         setCurrentMerchant(merchant)
+        void upsertFinanceMerchant(merchant)
       }
     }
     setIsLoading(false)
   }, [])
 
-  const refreshMerchant = useCallback(() => {
+  const refreshMerchant = useCallback(async () => {
     if (!currentMerchant) return
-    const all = loadMerchants()
-    setMerchants(all)
-    const merchant = all.find((m) => m.id === currentMerchant.id)
+    const local = loadMerchants()
+    const index = local.findIndex((merchant) => merchant.id === currentMerchant.id)
+    const fromServer = await fetchFinanceMerchant(currentMerchant.id)
+
+    if (fromServer && index !== -1) {
+      const merged = { ...local[index], ...fromServer, password: local[index].password }
+      const next = [...local]
+      next[index] = merged
+      setMerchants(next)
+      setCurrentMerchant(merged)
+      return
+    }
+
+    setMerchants(local)
+    const merchant = local.find((item) => item.id === currentMerchant.id)
     if (merchant) setCurrentMerchant(merchant)
   }, [currentMerchant])
 
@@ -78,6 +92,7 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       setMerchants(all)
       setCurrentMerchant(merchant)
     })
+    void upsertFinanceMerchant(merchant)
     return null
   }
 
@@ -93,7 +108,6 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
     }
 
     const registrationFee = calculateMerchantRegistrationPrice(data.categories.length)
-
     const newMerchant = createMerchant({
       businessName: data.businessName,
       email: data.email,
@@ -137,6 +151,7 @@ Système Guinée Multiservices`
       setMerchants(updated)
       setCurrentMerchant(newMerchant)
     })
+    void upsertFinanceMerchant(newMerchant)
     return null
   }
 
@@ -182,7 +197,10 @@ Système Guinée Multiservices`
     const all = loadMerchants()
     setMerchants(all)
     const merchant = all.find((m) => m.id === currentMerchant.id)
-    if (merchant) setCurrentMerchant(merchant)
+    if (merchant) {
+      setCurrentMerchant(merchant)
+      void upsertFinanceMerchant(merchant)
+    }
     return null
   }
 

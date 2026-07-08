@@ -1,5 +1,5 @@
 import type { WithdrawalMethod } from '../types/merchant'
-import { sendAdminWithdrawalNotificationEmail } from '../services/emailService'
+import { syncTreasuryEntry } from '../services/financeServer'
 
 const TREASURY_KEY = 'carte-multiservice-treasury'
 
@@ -12,7 +12,6 @@ export type TreasuryEntryType =
 export interface TreasuryEntry {
   id: string
   type: TreasuryEntryType
-  /** Positif = entrée, négatif = sortie */
   amount: number
   label: string
   date: string
@@ -49,34 +48,8 @@ function saveState(state: TreasuryState) {
   localStorage.setItem(TREASURY_KEY, JSON.stringify(state))
 }
 
-export function getTreasuryBalance(): number {
-  return loadState().entries.reduce((sum, e) => sum + e.amount, 0)
-}
-
-export function getTreasuryEntries(): TreasuryEntry[] {
-  return [...loadState().entries].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  )
-}
-
-export function getTreasurySummary() {
-  const entries = loadState().entries
-  const income = entries.filter((e) => e.amount > 0).reduce((s, e) => s + e.amount, 0)
-  const payouts = entries.filter((e) => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0)
-  const cardOrders = entries
-    .filter((e) => e.type === 'card_order')
-    .reduce((s, e) => s + e.amount, 0)
-  const merchantFees = entries
-    .filter((e) => e.type === 'merchant_registration' || e.type === 'merchant_category')
-    .reduce((s, e) => s + e.amount, 0)
-
-  return {
-    balance: income - payouts,
-    totalIncome: income,
-    totalPayouts: payouts,
-    cardOrdersRevenue: cardOrders,
-    merchantFeesRevenue: merchantFees,
-  }
+export function replaceTreasuryState(state: TreasuryState) {
+  saveState(state)
 }
 
 function addEntry(
@@ -98,6 +71,7 @@ function addEntry(
     entries: [entry, ...state.entries],
     adminWithdrawals: state.adminWithdrawals,
   })
+  void syncTreasuryEntry({ type, amount, label, referenceId })
   return entry
 }
 
@@ -131,74 +105,4 @@ export function recordMerchantCategoryRevenue(
     `Catégorie ajoutée — ${businessName} · ${categoryLabel}`,
     merchantId
   )
-}
-
-export function requestAdminWithdrawal(
-  amount: number,
-  method: WithdrawalMethod,
-  accountNumber: string
-): { success: boolean; error?: string; withdrawal?: AdminWithdrawalRecord } {
-  const balance = getTreasuryBalance()
-  if (amount <= 0) return { success: false, error: 'Montant invalide' }
-  if (amount > balance) {
-    return {
-      success: false,
-      error: `Solde plateforme insuffisant (${balance.toLocaleString('fr-GN')} GNF)`,
-    }
-  }
-  if (!accountNumber.trim()) {
-    return { success: false, error: 'Numéro de compte requis' }
-  }
-
-  const methodLabels: Record<WithdrawalMethod, string> = {
-    'orange-money': 'Orange Money',
-    'mobile-money': 'Mobile Money',
-    bank: 'Virement bancaire',
-  }
-
-  const withdrawal: AdminWithdrawalRecord = {
-    id: crypto.randomUUID(),
-    amount,
-    method,
-    accountNumber: accountNumber.trim(),
-    createdAt: new Date().toISOString(),
-  }
-
-  const state = loadState()
-  saveState({
-    entries: [
-      {
-        id: crypto.randomUUID(),
-        type: 'admin_withdrawal',
-        amount: -amount,
-        label: `Retrait admin — ${methodLabels[method]} · ${accountNumber.trim()}`,
-        date: new Date().toISOString(),
-        referenceId: withdrawal.id,
-      },
-      ...state.entries,
-    ],
-    adminWithdrawals: [withdrawal, ...state.adminWithdrawals],
-  })
-
-  sendAdminWithdrawalNotificationEmail(
-    'Retrait plateforme enregistré — Guinée Multiservices',
-    `Bonjour Admin,
-
-Un retrait plateforme a été enregistré.
-
-  Montant : ${amount.toLocaleString('fr-GN')} GNF
-  Méthode : ${methodLabels[method]}
-  Destination : ${accountNumber.trim()}
-
-Le journal de trésorerie a été mis à jour.
-
-Cordialement,
-Système Guinée Multiservices`
-  )
-
-  return { success: true, withdrawal }
-}
-
-export function getAdminWithdrawals(): AdminWithdrawalRecord[] {
-  return loadState().adminWithdrawals
 }

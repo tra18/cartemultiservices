@@ -27,6 +27,10 @@
     {
       "src": "api/client-auth.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/finance.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -35,6 +39,7 @@
     { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
     { "src": "/api/wallet", "dest": "/api/wallet.js" },
     { "src": "/api/client-auth", "dest": "/api/client-auth.js" },
+    { "src": "/api/finance", "dest": "/api/finance.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],

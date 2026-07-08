@@ -1,10 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowDownToLine, CheckCircle, Clock } from 'lucide-react'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
-import {
-  getMerchantAvailableBalance,
-  requestWithdrawal,
-} from '../../store/platformStore'
+import { requestMerchantWithdrawalOnServer, upsertFinanceMerchant } from '../../services/financeServer'
 import type { WithdrawalMethod } from '../../types/merchant'
 import { formatCurrency } from '../../utils/currency'
 
@@ -28,11 +25,20 @@ export function MerchantWithdrawals() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  useEffect(() => {
+    if (currentMerchant) {
+      void upsertFinanceMerchant(currentMerchant)
+    }
+  }, [currentMerchant])
+
   if (!currentMerchant) return null
 
-  const available = getMerchantAvailableBalance(currentMerchant)
+  const pending = currentMerchant.withdrawals
+    .filter((withdrawal) => withdrawal.status === 'pending')
+    .reduce((sum, withdrawal) => sum + withdrawal.amount, 0)
+  const available = currentMerchant.balance - pending
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccess(false)
@@ -48,7 +54,7 @@ export function MerchantWithdrawals() {
       return
     }
 
-    const result = requestWithdrawal(currentMerchant.id, parsed, method, account)
+    const result = await requestMerchantWithdrawalOnServer(currentMerchant.id, parsed, method, account)
     if (!result.success) {
       setError(result.error ?? 'Erreur')
       return
@@ -56,7 +62,7 @@ export function MerchantWithdrawals() {
 
     setSuccess(true)
     setAmount('')
-    refreshMerchant()
+    await refreshMerchant()
   }
 
   return (
@@ -73,7 +79,7 @@ export function MerchantWithdrawals() {
         <p className="text-2xl font-bold text-emerald-800">{formatCurrency(available)}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">Montant (GNF)</label>
           <input
@@ -97,9 +103,7 @@ export function MerchantWithdrawals() {
                 type="button"
                 onClick={() => setMethod(id)}
                 className={`w-full rounded-xl border px-4 py-3 text-left font-medium transition ${
-                  method === id
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                    : 'border-slate-200 bg-white text-slate-700'
+                  method === id ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700'
                 }`}
               >
                 {label}
@@ -116,18 +120,12 @@ export function MerchantWithdrawals() {
             type="text"
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value)}
-            placeholder={
-              method === 'bank'
-                ? 'IBAN ou numéro de compte'
-                : currentMerchant.mobileMoneyNumber
-            }
+            placeholder={method === 'bank' ? 'IBAN ou numéro de compte' : currentMerchant.mobileMoneyNumber}
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
         </div>
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-        )}
+        {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
 
         {success && (
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -136,43 +134,33 @@ export function MerchantWithdrawals() {
           </div>
         )}
 
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 font-semibold text-white hover:bg-emerald-700"
-        >
+        <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 font-semibold text-white hover:bg-emerald-700">
           <ArrowDownToLine className="h-5 w-5" />
           Demander le retrait
         </button>
       </form>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Historique des retraits
-        </h3>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Historique des retraits</h3>
         <div className="space-y-2">
           {currentMerchant.withdrawals.length === 0 ? (
             <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
               Aucun retrait demandé
             </p>
           ) : (
-            currentMerchant.withdrawals.map((w) => {
-              const status = STATUS_LABELS[w.status]
+            currentMerchant.withdrawals.map((withdrawal) => {
+              const status = STATUS_LABELS[withdrawal.status]
               return (
-                <div
-                  key={w.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-4"
-                >
+                <div key={withdrawal.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-4">
                   <div>
-                    <p className="font-medium text-slate-900">{formatCurrency(w.amount)}</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(withdrawal.amount)}</p>
                     <p className="text-sm text-slate-500">
-                      {METHODS.find((m) => m.id === w.method)?.label} · {w.accountNumber}
+                      {METHODS.find((item) => item.id === withdrawal.method)?.label} · {withdrawal.accountNumber}
                     </p>
-                    <p className="text-xs text-slate-400">
-                      {new Date(w.createdAt).toLocaleDateString('fr-GN')}
-                    </p>
+                    <p className="text-xs text-slate-400">{new Date(withdrawal.createdAt).toLocaleDateString('fr-GN')}</p>
                   </div>
                   <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.color}`}>
-                    {w.status === 'pending' && <Clock className="h-3 w-3" />}
+                    {withdrawal.status === 'pending' && <Clock className="h-3 w-3" />}
                     {status.label}
                   </span>
                 </div>
