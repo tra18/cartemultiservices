@@ -42,6 +42,7 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
   const [merchants, setMerchants] = useState<MerchantAccount[]>(loadMerchants)
   const [currentMerchant, setCurrentMerchant] = useState<MerchantAccount | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const currentMerchantId = currentMerchant?.id ?? null
 
   useEffect(() => {
     saveMerchants(merchants)
@@ -62,10 +63,10 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshMerchant = useCallback(async () => {
-    if (!currentMerchant) return
+    if (!currentMerchantId) return
     const local = loadMerchants()
-    const index = local.findIndex((merchant) => merchant.id === currentMerchant.id)
-    const fromServer = await fetchFinanceMerchant(currentMerchant.id)
+    const index = local.findIndex((merchant) => merchant.id === currentMerchantId)
+    const fromServer = await fetchFinanceMerchant(currentMerchantId)
 
     if (fromServer && index !== -1) {
       const merged = { ...local[index], ...fromServer, password: local[index].password }
@@ -77,9 +78,9 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
     }
 
     setMerchants(local)
-    const merchant = local.find((item) => item.id === currentMerchant.id)
+    const merchant = local.find((item) => item.id === currentMerchantId)
     if (merchant) setCurrentMerchant(merchant)
-  }, [currentMerchant])
+  }, [currentMerchantId])
 
   const login = (email: string, password: string): string | null => {
     const all = loadMerchants()

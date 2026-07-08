@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowDownToLine,
   History,
@@ -21,7 +22,13 @@ const navItems = [
 ]
 
 export function MerchantLayout() {
-  const { currentMerchant, logout } = useMerchantAuth()
+  const { currentMerchant, logout, refreshMerchant } = useMerchantAuth()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (!currentMerchant) return
+    void refreshMerchant()
+  }, [currentMerchant, refreshMerchant, location.pathname])
 
   const header = (
     <div className="flex items-center justify-between gap-2">
