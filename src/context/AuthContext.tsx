@@ -76,7 +76,7 @@ interface AuthContextValue {
     pin: string,
     detail?: string
   ) => boolean
-  payViaQr: (paymentId: string, pin: string) => { success: boolean; error?: string }
+  payViaQr: (paymentId: string, pin: string) => Promise<{ success: boolean; error?: string }>
   recharge: (amount: number, method: string, pin: string) => boolean
   orderCard: (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
@@ -427,14 +427,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const payViaQr = (paymentId: string, pin: string): { success: boolean; error?: string } => {
+  const payViaQr = async (paymentId: string, pin: string): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser) return { success: false, error: 'Non connecté' }
     const cardErr = requireUsableCard()
     if (cardErr) return { success: false, error: cardErr }
     const pinErr = verifyCardPin(pin)
     if (pinErr) return { success: false, error: pinErr }
 
-    const result = completeQrPayment(paymentId, currentUser)
+    const result = await completeQrPayment(paymentId, currentUser)
     if (!result.success || !result.transaction) {
       return { success: false, error: result.error ?? 'Paiement échoué' }
     }

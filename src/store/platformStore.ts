@@ -3,16 +3,15 @@ import type { Transaction } from '../types'
 import type { UserAccount } from '../types/auth'
 import type {
   MerchantAccount,
-  MerchantSale,
   PaymentRequest,
   WithdrawalRequest,
 } from '../types/merchant'
 import {
   sendAdminWithdrawalNotificationEmail,
-  sendMerchantSaleEmail,
   sendMerchantWithdrawalProcessedEmail,
   sendMerchantWithdrawalRequestedEmail,
 } from '../services/emailService'
+import { recordQrSaleOnServer } from '../services/financeServer'
 
 const MERCHANTS_KEY = 'carte-multiservice-merchants'
 const PAYMENTS_KEY = 'carte-multiservice-payments'
@@ -190,10 +189,10 @@ function expireIfNeeded(request: PaymentRequest): PaymentRequest {
   return request
 }
 
-export function completeQrPayment(
+export async function completeQrPayment(
   paymentId: string,
   user: UserAccount
-): { success: boolean; error?: string; transaction?: Transaction } {
+): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
   let request = getPaymentRequest(paymentId)
   if (!request) return { success: false, error: 'Paiement introuvable' }
 
@@ -215,27 +214,24 @@ export function completeQrPayment(
     return { success: false, error: 'Commerçant introuvable' }
   }
 
-  const sale: MerchantSale = {
-    id: crypto.randomUUID(),
+  const serverResult = await recordQrSaleOnServer({
+    merchantId: request.merchantId,
     paymentRequestId: paymentId,
     amount: request.amount,
     customerName: user.fullName,
-    date: new Date().toISOString(),
+  })
+  if (!serverResult.success) {
+    return { success: false, error: serverResult.error ?? 'Synchronisation du paiement échouée' }
   }
 
-  merchants[merchantIndex] = {
-    ...merchants[merchantIndex],
-    balance: merchants[merchantIndex].balance + request.amount,
-    sales: [sale, ...merchants[merchantIndex].sales],
+  if (serverResult.merchant) {
+    merchants[merchantIndex] = {
+      ...merchants[merchantIndex],
+      balance: serverResult.merchant.balance,
+      sales: serverResult.merchant.sales,
+    }
+    saveMerchants(merchants)
   }
-  saveMerchants(merchants)
-  sendMerchantSaleEmail(
-    merchants[merchantIndex].email,
-    merchants[merchantIndex].businessName,
-    request.amount,
-    user.fullName,
-    merchants[merchantIndex].balance
-  )
 
   const requests = loadPaymentRequests()
   savePaymentRequests(

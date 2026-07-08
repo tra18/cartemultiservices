@@ -3,6 +3,7 @@ import {
   addTreasuryEntry,
   getFinanceSnapshot,
   processMerchantWithdrawalInFinance,
+  recordQrSaleInFinance,
   requestAdminWithdrawalInFinance,
   requestMerchantWithdrawalInFinance,
   upsertFinanceMerchant,
@@ -66,6 +67,26 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Invalid withdrawal payload" })
       }
       const result = await requestMerchantWithdrawalInFinance(redis, merchantId, amount, method, accountNumber ?? "")
+      if (!result.success) return res.status(400).json(result)
+      return res.status(200).json(result)
+    }
+
+    if (action === "record_qr_sale") {
+      const { merchantId, paymentRequestId, amount, customerName } = body
+      if (
+        typeof merchantId !== "string" ||
+        typeof paymentRequestId !== "string" ||
+        typeof amount !== "number" ||
+        typeof customerName !== "string"
+      ) {
+        return res.status(400).json({ error: "Invalid QR sale payload" })
+      }
+      const result = await recordQrSaleInFinance(redis, {
+        merchantId,
+        paymentRequestId,
+        amount,
+        customerName,
+      })
       if (!result.success) return res.status(400).json(result)
       return res.status(200).json(result)
     }

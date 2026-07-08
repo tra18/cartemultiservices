@@ -115,13 +115,14 @@ export function QrPay() {
     setError('')
     requestPin((pin) => {
       setPaying(true)
-      const result = payViaQr(paymentId, pin)
-      if (result.success) {
-        setSuccess(true)
-      } else {
-        setError(result.error ?? 'Paiement échoué')
-        setPaying(false)
-      }
+      void payViaQr(paymentId, pin).then((result) => {
+        if (result.success) {
+          setSuccess(true)
+        } else {
+          setError(result.error ?? 'Paiement échoué')
+          setPaying(false)
+        }
+      })
     })
   }
 

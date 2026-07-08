@@ -95,6 +95,46 @@ export async function upsertFinanceMerchant(redis, merchant) {
   return next[index]
 }
 
+export async function recordQrSaleInFinance(redis, { merchantId, paymentRequestId, amount, customerName }) {
+  const merchants = await loadFinanceMerchants(redis)
+  const index = merchants.findIndex((merchant) => merchant.id === merchantId)
+  if (index === -1) return { success: false, error: "Commerçant introuvable" }
+
+  const merchant = merchants[index]
+  const saleAmount = Number(amount) || 0
+  if (saleAmount <= 0) return { success: false, error: "Montant invalide" }
+
+  const existing = merchant.sales.find((sale) => sale.paymentRequestId === paymentRequestId)
+  if (existing) {
+    return { success: true, merchant, sale: existing, duplicate: true }
+  }
+
+  const sale = {
+    id: crypto.randomUUID(),
+    paymentRequestId: sanitizeText(paymentRequestId, 80),
+    amount: saleAmount,
+    customerName: sanitizeText(customerName, 120),
+    date: new Date().toISOString(),
+  }
+
+  merchants[index] = {
+    ...merchant,
+    balance: merchant.balance + saleAmount,
+    sales: [sale, ...merchant.sales],
+  }
+  await saveFinanceMerchants(redis, merchants)
+
+  await sendTypedEmail("merchant_sale", {
+    email: merchant.email,
+    businessName: merchant.businessName,
+    amount: saleAmount,
+    customerName: sale.customerName,
+    newBalance: merchants[index].balance,
+  })
+
+  return { success: true, merchant: merchants[index], sale }
+}
+
 export async function requestMerchantWithdrawalInFinance(redis, merchantId, amount, method, accountNumber) {
   const merchants = await loadFinanceMerchants(redis)
   const index = merchants.findIndex((merchant) => merchant.id === merchantId)

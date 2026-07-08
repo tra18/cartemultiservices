@@ -62,6 +62,23 @@ export async function syncTreasuryEntry(entry: {
   }).catch(() => {})
 }
 
+export async function recordQrSaleOnServer(payload: {
+  merchantId: string
+  paymentRequestId: string
+  amount: number
+  customerName: string
+}): Promise<{ success: boolean; error?: string; merchant?: MerchantAccount }> {
+  const response = await fetch('/api/finance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'record_qr_sale', ...payload }),
+  })
+
+  if (!response.ok) return { success: false, error: await readError(response) }
+  const data = (await response.json()) as { merchant?: MerchantAccount }
+  return { success: true, merchant: data.merchant }
+}
+
 export async function upsertFinanceMerchant(merchant: MerchantAccount): Promise<void> {
   await fetch('/api/finance', {
     method: 'POST',
