@@ -1,9 +1,3 @@
-import {
-  sendActivationCodeEmail,
-  sendAdminOrderNotificationEmail,
-  sendCardShippedEmail,
-  sendWelcomeAccountEmail,
-} from '../services/emailService'
 import type { CardStatus } from '../types/order'
 import type { CardOrder, CardOrderFormData } from '../types/order'
 import type { UserAccount } from '../types/auth'
@@ -11,7 +5,7 @@ import { generateCardNumber, generateCardToken } from '../utils/card'
 import { CARD_PRICE } from '../utils/pricing'
 import { recordCardOrderRevenue } from './treasuryStore'
 import { normalizeEmail, sanitizeText } from '../utils/validation'
-import { mergeOrders, syncOrderToServer } from '../services/orderServer'
+import { mergeOrders, fetchServerOrders, syncOrderToServer } from '../services/orderServer'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
 const USERS_KEY = 'carte-multiservice-users'
@@ -53,10 +47,7 @@ export function saveCardOrders(orders: CardOrder[]) {
 
 export async function hydrateOrdersFromServer() {
   try {
-    const response = await fetch('/api/orders')
-    if (!response.ok) return loadCardOrders()
-
-    const serverOrders = (await response.json()) as CardOrder[]
+    const serverOrders = await fetchServerOrders()
     const merged = mergeOrders(loadCardOrders(), serverOrders)
     saveCardOrders(merged)
     return merged
@@ -97,10 +88,6 @@ export function createCardOrder(userId: string, data: CardOrderFormData): CardOr
 
   const safeEmail = normalizeEmail(data.email)
   const safeName = sanitizeText(data.fullName, 80)
-
-  sendActivationCodeEmail(safeEmail, safeName, activationCode)
-  sendWelcomeAccountEmail(safeEmail, safeName)
-  sendAdminOrderNotificationEmail(safeName, safeEmail, CARD_PRICE, data.deliveryMethod)
 
   const order: CardOrder = {
     id: crypto.randomUUID(),
@@ -156,7 +143,7 @@ export function produceCard(
 
   orders[index] = updated
   saveCardOrders(orders)
-  void syncOrderToServer(updated)
+  void syncOrderToServer(updated, { admin: true })
   return { success: true, order: updated }
 }
 
@@ -182,9 +169,8 @@ export function markOrderShipped(
   orders[index] = updated
   saveCardOrders(orders)
 
-  sendCardShippedEmail(order.email, order.userName)
   syncUserCardStatus(order.userId, 'shipped', order.cardNumber)
-  void syncOrderToServer(updated)
+  void syncOrderToServer(updated, { admin: true })
 
   return { success: true, order: updated }
 }

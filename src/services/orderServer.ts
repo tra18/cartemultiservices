@@ -1,11 +1,16 @@
 import type { CardOrder } from '../types/order'
-import { getAdminAuthHeaders, getWriteApiHeaders } from './apiClient'
+import { getAdminAuthHeaders } from './apiClient'
 
-export async function syncOrderToServer(order: CardOrder) {
+export async function syncOrderToServer(order: CardOrder, options?: { admin?: boolean }) {
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (options?.admin) {
+      Object.assign(headers, getAdminAuthHeaders())
+    }
+
     await fetch('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getWriteApiHeaders() },
+      headers,
       body: JSON.stringify(order),
     })
   } catch (error) {

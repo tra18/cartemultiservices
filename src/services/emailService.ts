@@ -1,7 +1,4 @@
 import { ADMIN_EMAIL, SUPPORT_EMAIL } from '../constants/brand'
-import {
-  getWriteApiHeaders,
-} from './apiClient'
 
 export interface SimulatedEmail {
   id: string
@@ -42,7 +39,7 @@ function queueRealEmail(payload: RealEmailPayload) {
 
   void fetch('/api/send-email', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getWriteApiHeaders() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }).catch((error) => {
     console.error('Email send failed', error)

@@ -1,12 +1,11 @@
+import { sendTypedEmail } from './_lib/mailer.js'
 import {
-  getApiSecret,
   getClientIp,
   getRedis,
   isValidEmail,
   parseBody,
   rateLimit,
   verifyAdminSession,
-  verifyApiSecret,
 } from './_lib/security.js'
 
 const ORDERS_KEY = 'card-orders'
@@ -21,6 +20,24 @@ function isValidOrder(order) {
     typeof order.status === 'string' &&
     typeof order.createdAt === 'string'
   )
+}
+
+async function sendNewOrderEmails(order) {
+  await sendTypedEmail('activation_code', {
+    email: order.email,
+    fullName: order.userName,
+    activationCode: order.activationCode,
+  })
+  await sendTypedEmail('welcome_account', {
+    email: order.email,
+    fullName: order.userName,
+  })
+  await sendTypedEmail('admin_order_notification', {
+    customerName: order.userName,
+    customerEmail: order.email,
+    amount: order.amount,
+    deliveryMethod: order.deliveryMethod,
+  })
 }
 
 export default async function handler(req, res) {
@@ -41,14 +58,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      if (!getApiSecret()) {
-        return res.status(503).json({ error: 'API not configured' })
-      }
-
-      if (!verifyApiSecret(req)) {
-        return res.status(401).json({ error: 'Unauthorized' })
-      }
-
+      const session = await verifyAdminSession(req, redis)
       const ip = getClientIp(req)
       const allowed = await rateLimit(redis, `rate:orders-post:${ip}`, 60, 3600)
       if (!allowed) {
@@ -62,6 +72,13 @@ export default async function handler(req, res) {
 
       const orders = (await redis.get(ORDERS_KEY)) ?? []
       const index = orders.findIndex((item) => item.id === order.id)
+      const isNewOrder = index === -1
+
+      if (!session && !isNewOrder) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
+
+      const previous = index === -1 ? null : orders[index]
       const next =
         index === -1
           ? [order, ...orders]
@@ -70,6 +87,16 @@ export default async function handler(req, res) {
             )
 
       await redis.set(ORDERS_KEY, next)
+
+      if (isNewOrder) {
+        await sendNewOrderEmails(order)
+      } else if (session && order.status === 'shipped' && previous?.status !== 'shipped') {
+        await sendTypedEmail('card_shipped', {
+          email: order.email,
+          fullName: order.userName,
+        })
+      }
+
       return res.status(200).json({ ok: true })
     }
 
