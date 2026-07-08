@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAdminAuth } from '../../context/AdminAuthContext'
 import { ADMIN_TOKEN_KEY } from '../../services/apiClient'
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from '../../constants/brand'
 
 function hasAdminSession(): boolean {
   try {
@@ -25,7 +26,7 @@ export function AdminProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/connexion" replace />
+    return <Navigate to={ADMIN_LOGIN_PATH} replace />
   }
 
   return <>{children}</>
@@ -43,7 +44,7 @@ export function AdminPublicRoute({ children }: { children: ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/admin" replace />
+    return <Navigate to={ADMIN_BASE_PATH} replace />
   }
 
   return <>{children}</>

@@ -6,6 +6,7 @@ import { hydrateOrdersFromServer, loadCardOrders } from '../../store/orderStore'
 import type { CardOrderStatus } from '../../types/order'
 import { formatCurrency } from '../../utils/currency'
 import { maskCardNumber } from '../../utils/card'
+import { ADMIN_BASE_PATH } from '../../constants/brand'
 
 const STATUS_FILTERS: { value: 'all' | CardOrderStatus; label: string }[] = [
   { value: 'all', label: 'Toutes' },
@@ -127,7 +128,7 @@ export function AdminOrders() {
           filtered.map((order) => (
             <Link
               key={order.id}
-              to={`/admin/commandes/${order.id}`}
+              to={`${ADMIN_BASE_PATH}/commandes/${order.id}`}
               className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm sm:flex-row sm:items-center sm:gap-4"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">

@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { PhysicalCardPrint } from '../../components/admin/PhysicalCardPrint'
 import { getCardOrderById } from '../../store/orderStore'
+import { ADMIN_BASE_PATH } from '../../constants/brand'
 
 export function AdminPrintCard() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -11,7 +12,7 @@ export function AdminPrintCard() {
     return (
       <div className="py-12 text-center">
         <p className="text-slate-600">Carte non produite — générez-la d&apos;abord.</p>
-        <Link to={`/admin/commandes/${orderId}`} className="mt-4 inline-block text-violet-600">
+        <Link to={`${ADMIN_BASE_PATH}/commandes/${orderId}`} className="mt-4 inline-block text-violet-600">
           Retour à la commande
         </Link>
       </div>
@@ -24,7 +25,7 @@ export function AdminPrintCard() {
     <div className="space-y-6">
       <div className="no-print flex items-center justify-between gap-4">
         <Link
-          to={`/admin/commandes/${orderId}`}
+          to={`${ADMIN_BASE_PATH}/commandes/${orderId}`}
           className="flex items-center gap-1 text-sm font-medium text-violet-600"
         >
           <ArrowLeft className="h-4 w-4" />

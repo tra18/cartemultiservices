@@ -17,6 +17,7 @@ import {
 } from '../../store/orderStore'
 import { formatCurrency } from '../../utils/currency'
 import { getCardActivationUrl, maskCardNumber } from '../../utils/card'
+import { ADMIN_BASE_PATH } from '../../constants/brand'
 
 export function AdminOrderDetail() {
   const { orderId } = useParams<{ orderId: string }>()
@@ -41,7 +42,7 @@ export function AdminOrderDetail() {
     return (
       <div className="py-12 text-center">
         <p className="text-slate-600">Commande introuvable</p>
-        <Link to="/admin" className="mt-4 inline-block text-violet-600">
+        <Link to={ADMIN_BASE_PATH} className="mt-4 inline-block text-violet-600">
           Retour aux commandes
         </Link>
       </div>
@@ -60,7 +61,7 @@ export function AdminOrderDetail() {
     return (
       <div className="py-12 text-center">
         <p className="text-slate-600">Commande introuvable</p>
-        <Link to="/admin" className="mt-4 inline-block text-violet-600">
+        <Link to={ADMIN_BASE_PATH} className="mt-4 inline-block text-violet-600">
           Retour aux commandes
         </Link>
       </div>
@@ -110,7 +111,7 @@ export function AdminOrderDetail() {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => navigate('/admin')}
+        onClick={() => navigate(ADMIN_BASE_PATH)}
         className="flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-700"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -222,7 +223,7 @@ export function AdminOrderDetail() {
 
         {canPrint && (
           <Link
-            to={`/admin/commandes/${orderId}/imprimer`}
+            to={`${ADMIN_BASE_PATH}/commandes/${orderId}/imprimer`}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-3.5 font-semibold text-violet-700 hover:bg-violet-100"
           >
             <Printer className="h-5 w-5" />

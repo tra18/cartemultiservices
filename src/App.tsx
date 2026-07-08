@@ -43,6 +43,7 @@ import { AdminOrders } from './pages/admin/AdminOrders'
 import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
 import { AdminPrintCard } from './pages/admin/AdminPrintCard'
 import { AdminFinance } from './pages/admin/AdminFinance'
+import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
 
 export default function App() {
   return (
@@ -53,7 +54,7 @@ export default function App() {
             <Routes>
             {/* Portail admin */}
             <Route
-              path="/admin/connexion"
+              path={ADMIN_LOGIN_PATH}
               element={
                 <AdminPublicRoute>
                   <AdminLogin />
@@ -61,7 +62,7 @@ export default function App() {
               }
             />
             <Route
-              path="/admin"
+              path={ADMIN_BASE_PATH}
               element={
                 <AdminProtectedRoute>
                   <AdminLayout />

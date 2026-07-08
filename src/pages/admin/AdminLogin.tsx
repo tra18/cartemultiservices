@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Settings, Shield } from 'lucide-react'
 import { useAdminAuth } from '../../context/AdminAuthContext'
+import { ADMIN_BASE_PATH } from '../../constants/brand'
 
 export function AdminLogin() {
   const { login } = useAdminAuth()
@@ -18,7 +19,7 @@ export function AdminLogin() {
       setError(err)
       return
     }
-    navigate('/admin')
+    navigate(ADMIN_BASE_PATH)
   }
 
   return (
