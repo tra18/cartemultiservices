@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, LogIn, Store } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
 
 export function MerchantLogin() {
@@ -104,6 +105,10 @@ export function MerchantLogin() {
             ← Retour espace client
           </Link>
         </p>
+
+        <div className="mt-4">
+          <BackToHomeLink />
+        </div>
       </div>
     </div>
   )

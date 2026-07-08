@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { useAuth } from '../context/AuthContext'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 
@@ -128,6 +129,8 @@ export function Login() {
             Créer un compte
           </Link>
         </p>
+
+        <BackToHomeLink />
       </div>
     </AuthLayout>
   )

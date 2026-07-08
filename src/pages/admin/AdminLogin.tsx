@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Settings, Shield } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useAdminAuth } from '../../context/AdminAuthContext'
 import { ADMIN_BASE_PATH } from '../../constants/brand'
 
@@ -23,7 +24,7 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="page-container-narrow flex flex-col justify-center">
+    <div className="page-container-narrow flex flex-col justify-center px-6 py-12">
       <div className="mb-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-600 text-white">
           <Settings className="h-7 w-7" />
@@ -62,6 +63,10 @@ export function AdminLogin() {
           Connexion admin
         </button>
       </form>
+
+      <div className="mt-6">
+        <BackToHomeLink />
+      </div>
     </div>
   )
 }
