@@ -16,8 +16,18 @@ function isWeakPin(pin) {
   return pin === '0000' || pin === '1234'
 }
 
+function hasIssuedCard(user) {
+  const cardNumber = String(user.cardNumber ?? '')
+  return cardNumber.length > 0 && cardNumber !== 'En attente de carte'
+}
+
 function userHasPin(user) {
-  return Boolean(user.cardPinHash || user.cardPin || user.digitalCardEnabledAt)
+  return Boolean(
+    user.cardPinHash ||
+      user.cardPin ||
+      user.digitalCardEnabledAt ||
+      (hasIssuedCard(user) && (user.cardStatus === 'active' || user.cardStatus === 'blocked'))
+  )
 }
 
 function maskEmail(email) {
@@ -243,16 +253,19 @@ async function handleCardSecurity(req, res, redis, session) {
 async function handleResetCardPin(req, res, redis, session) {
   const body = parseBody(req)
   const action = body.action
-  const redisKey = `pin-reset:${session.userId}`
+  const userId = session.userId ?? session.user?.id
+  if (!userId) return res.status(401).json({ error: 'Session invalide' })
 
-  const user = await getUserById(redis, session.userId)
+  const redisKey = `pin-reset:${userId}`
+
+  const user = session.user ?? (await getUserById(redis, userId))
   if (!user) return res.status(404).json({ error: 'Compte introuvable' })
   if (!userHasPin(user)) {
     return res.status(400).json({ error: 'Aucun code PIN configuré sur votre compte' })
   }
 
   if (action === 'request') {
-    const allowed = await rateLimit(redis, `rate:pin-reset-req:${session.userId}`, 3, 3600)
+    const allowed = await rateLimit(redis, `rate:pin-reset-req:${userId}`, 3, 3600)
     if (!allowed) {
       return res.status(429).json({ error: 'Trop de demandes. Réessayez dans une heure.' })
     }
@@ -270,7 +283,7 @@ async function handleResetCardPin(req, res, redis, session) {
   }
 
   if (action === 'confirm') {
-    const allowed = await rateLimit(redis, `rate:pin-reset-confirm:${session.userId}`, 10, 3600)
+    const allowed = await rateLimit(redis, `rate:pin-reset-confirm:${userId}`, 10, 3600)
     if (!allowed) {
       return res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' })
     }

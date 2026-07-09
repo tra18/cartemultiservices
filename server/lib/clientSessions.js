@@ -39,7 +39,7 @@ export async function verifyClientSession(req, redis) {
   const user = await getUserById(redis, session.userId)
   if (!user) return null
 
-  return { token, session, user }
+  return { token, userId: session.userId, session, user }
 }
 
 export async function destroyClientSession(redis, token, userId) {
