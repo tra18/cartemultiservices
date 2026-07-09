@@ -1,8 +1,12 @@
 import type { CardOrder } from '../types/order'
 import { getClientAuthHeaders } from './clientAuth'
 import { getAdminAuthHeaders } from './apiClient'
+import type { OrderFormSecurityPayload } from './orderFormSecurity'
 
-export async function syncOrderToServer(order: CardOrder, options?: { admin?: boolean }) {
+export async function syncOrderToServer(
+  order: CardOrder,
+  options?: { admin?: boolean; formSecurity?: OrderFormSecurityPayload }
+) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (options?.admin) {
     Object.assign(headers, getAdminAuthHeaders())
@@ -13,7 +17,10 @@ export async function syncOrderToServer(order: CardOrder, options?: { admin?: bo
   const response = await fetch('/api/orders', {
     method: 'POST',
     headers,
-    body: JSON.stringify(order),
+    body: JSON.stringify({
+      ...order,
+      ...(options?.formSecurity ? { _formSecurity: options.formSecurity } : {}),
+    }),
   })
 
   if (!response.ok) {

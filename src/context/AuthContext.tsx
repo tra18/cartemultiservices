@@ -17,6 +17,7 @@ import {
   type ReplacementOrderData,
 } from '../store/orderStore'
 import { cardSecurityAction, confirmCardPinResetOnServer, enableDigitalCardOnServer, fetchMyOrder, normalizeOrderStatus, requestCardPinResetOnServer, verifyCardPinOnServer } from '../services/orderServer'
+import type { OrderFormSecurityPayload } from '../services/orderFormSecurity'
 import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
 import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
@@ -65,7 +66,8 @@ interface AuthContextValue {
   payViaQr: (paymentId: string, pin: string) => Promise<{ success: boolean; error?: string }>
   recharge: (amount: number, method: string, pin: string) => Promise<boolean>
   orderCard: (
-    data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
+    data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string },
+    formSecurity: OrderFormSecurityPayload
   ) => Promise<{ success: boolean; error?: string; order?: CardOrder }>
   orderReplacementCard: (
     data: ReplacementOrderData
@@ -288,13 +290,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const orderCard = async (
-    data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
+    data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string },
+    formSecurity: OrderFormSecurityPayload
   ): Promise<{ success: boolean; error?: string; order?: CardOrder }> => {
-    const validated = validateAndSanitizeOrderData({
-      ...data,
-      needsAddress: data.needsAddress ?? false,
-      addressFallback: data.addressFallback ?? '',
-    })
+    const validated = validateAndSanitizeOrderData(
+      {
+        ...data,
+        needsAddress: data.needsAddress ?? false,
+        addressFallback: data.addressFallback ?? '',
+      },
+      { skipPassword: Boolean(currentUser) }
+    )
 
     if (!validated.success) {
       return { success: false, error: validated.error }
@@ -324,7 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const order = await createCardOrder(currentUser.id, safeData)
+      const order = await createCardOrder(currentUser.id, safeData, formSecurity)
       if (safeData.fullName !== currentUser.fullName || safeData.phone !== currentUser.phone) {
         await patchClientProfile({ fullName: safeData.fullName, phone: safeData.phone })
       }
@@ -350,7 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: registration.error ?? 'Création de compte échouée' }
     }
 
-    const order = await createCardOrder(registration.user.id, safeData)
+    const order = await createCardOrder(registration.user.id, safeData, formSecurity)
     setCurrentUser(normalizeUser(registration.user))
     resetRateLimit()
     return { success: true, order }

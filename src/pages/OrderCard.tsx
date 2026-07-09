@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle, CreditCard, Eye, EyeOff, KeyRound, Lock, Mail, Package, Shield, UserPlus } from 'lucide-react'
 import { PaymentMethodPicker } from '../components/PaymentMethodPicker'
+import { TurnstileField } from '../components/TurnstileField'
 import { DELIVERY_OPTIONS } from '../data/deliveryMethods'
 import { getPaymentMethodLabel, PAYMENT_METHODS, type PaymentMethodId } from '../data/paymentMethods'
 import { useAuth } from '../context/AuthContext'
 import type { DeliveryMethod } from '../types/order'
 import { formatCurrency } from '../utils/currency'
+import { fetchOrderFormChallenge } from '../services/orderFormSecurity'
 import {
   checkFormTiming,
   checkHoneypot,
   checkRateLimit,
-  clearFormToken,
-  createFormToken,
   recordFailedAttempt,
-  verifyFormToken,
 } from '../utils/formSecurity'
 import { validateOrderStep1, validateOrderStep2, validatePassword } from '../utils/validation'
 import { CARD_PRICE } from '../utils/pricing'
@@ -24,7 +23,11 @@ export function OrderCard() {
   const navigate = useNavigate()
   const isExistingAccount = Boolean(currentUser)
   const formStartedAt = useRef(Date.now())
-  const [formToken, setFormToken] = useState('')
+  const [challengeToken, setChallengeToken] = useState('')
+  const [turnstileRequired, setTurnstileRequired] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [challengeError, setChallengeError] = useState('')
+  const [challengeLoading, setChallengeLoading] = useState(true)
   const [step, setStep] = useState(() => (currentUser ? 2 : 1))
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -44,10 +47,26 @@ export function OrderCard() {
   const [orderId, setOrderId] = useState('')
   const [orderEmail, setOrderEmail] = useState('')
 
-  useEffect(() => {
-    setFormToken(createFormToken())
-    formStartedAt.current = Date.now()
+  const loadChallenge = useCallback(async () => {
+    setChallengeLoading(true)
+    setChallengeError('')
+    const result = await fetchOrderFormChallenge()
+    if (!result.challenge) {
+      setChallengeError(result.error ?? 'Impossible de sécuriser le formulaire')
+      setChallengeToken('')
+      setTurnstileRequired(false)
+    } else {
+      setChallengeToken(result.challenge.token)
+      setTurnstileRequired(result.challenge.turnstileRequired)
+      formStartedAt.current = Date.now()
+    }
+    setTurnstileToken('')
+    setChallengeLoading(false)
   }, [])
+
+  useEffect(() => {
+    void loadChallenge()
+  }, [loadChallenge])
 
   useEffect(() => {
     if (!currentUser) return
@@ -85,11 +104,6 @@ export function OrderCard() {
       return
     }
 
-    if (!verifyFormToken(formToken)) {
-      setError('Session expirée. Rechargez la page et réessayez.')
-      return
-    }
-
     if (step === 1) {
       const step1Err = validateOrderStep1({ fullName, email, phone, password, confirmPassword })
       if (step1Err) {
@@ -97,6 +111,16 @@ export function OrderCard() {
         return
       }
       setStep(2)
+      return
+    }
+
+    if (!challengeToken) {
+      setError(challengeError || 'Formulaire non sécurisé. Rechargez la page.')
+      return
+    }
+
+    if (turnstileRequired && !turnstileToken) {
+      setError('Complétez la vérification anti-robot.')
       return
     }
 
@@ -136,28 +160,36 @@ export function OrderCard() {
 
     setSubmitting(true)
 
-    const result = await orderCard({
-      fullName,
-      email,
-      phone,
-      password,
-      address: needsAddress ? address : '',
-      city,
-      deliveryMethod,
-      paymentMethod: getPaymentMethodLabel(paymentMethod),
-      needsAddress,
-      addressFallback: DELIVERY_OPTIONS.find((d) => d.id === deliveryMethod)?.label ?? '',
-    })
+    const result = await orderCard(
+      {
+        fullName,
+        email,
+        phone,
+        password,
+        address: needsAddress ? address : '',
+        city,
+        deliveryMethod,
+        paymentMethod: getPaymentMethodLabel(paymentMethod),
+        needsAddress,
+        addressFallback: DELIVERY_OPTIONS.find((d) => d.id === deliveryMethod)?.label ?? '',
+      },
+      {
+        challengeToken,
+        formStartedAt: formStartedAt.current,
+        honeypot,
+        turnstileToken: turnstileToken || undefined,
+      }
+    )
 
     setSubmitting(false)
 
     if (!result.success) {
       setError(result.error ?? 'Commande échouée')
       recordFailedAttempt()
+      await loadChallenge()
       return
     }
 
-    clearFormToken()
     setOrderId(result.order?.id ?? '')
     setOrderEmail(email.trim().toLowerCase())
     setStep(3)
@@ -298,6 +330,31 @@ export function OrderCard() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {(challengeLoading || challengeError) && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              challengeError
+                ? 'border-red-200 bg-red-50 text-red-700'
+                : 'border-slate-200 bg-slate-50 text-slate-600'
+            }`}
+          >
+            {challengeError ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span>{challengeError}</span>
+                <button
+                  type="button"
+                  onClick={() => void loadChallenge()}
+                  className="font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  Réessayer
+                </button>
+              </div>
+            ) : (
+              'Initialisation du formulaire sécurisé…'
+            )}
+          </div>
+        )}
+
         {/* Honeypot anti-bot — champ caché */}
         <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
           <label htmlFor="website">Ne pas remplir</label>
@@ -581,6 +638,8 @@ export function OrderCard() {
               </div>
             </div>
 
+            <TurnstileField onToken={setTurnstileToken} />
+
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
               <input
                 type="checkbox"
@@ -623,7 +682,13 @@ export function OrderCard() {
           )}
           <button
             type="submit"
-            disabled={submitting || (step === 2 && !acceptTerms)}
+            disabled={
+              submitting ||
+              challengeLoading ||
+              !challengeToken ||
+              (step === 2 && !acceptTerms) ||
+              (step === 2 && turnstileRequired && !turnstileToken)
+            }
             className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? (

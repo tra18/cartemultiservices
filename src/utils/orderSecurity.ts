@@ -12,7 +12,8 @@ import {
 import { checkRateLimit } from './formSecurity'
 
 export function validateAndSanitizeOrderData(
-  data: CardOrderFormData & { needsAddress: boolean; addressFallback: string }
+  data: CardOrderFormData & { needsAddress: boolean; addressFallback: string },
+  options?: { skipPassword?: boolean }
 ): { success: true; data: CardOrderFormData } | { success: false; error: string } {
   const rateErr = checkRateLimit()
   if (rateErr) return { success: false, error: rateErr }
@@ -21,7 +22,7 @@ export function validateAndSanitizeOrderData(
     validateFullName(data.fullName),
     validateEmail(data.email),
     validateGuineaPhone(data.phone),
-    validatePassword(data.password),
+    options?.skipPassword ? null : validatePassword(data.password),
     data.needsAddress ? validateAddress(data.address) : null,
     data.needsAddress ? validateCity(data.city) : null,
   ].filter(Boolean)

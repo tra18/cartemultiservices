@@ -25,7 +25,36 @@ import {
   verifyAdminSession,
 } from '../lib/security.js'
 import { CARD_PRICE } from '../lib/pricing.js'
+import {
+  createOrderFormChallenge,
+  isOrderFormSecurityConfigured,
+  verifyOrderFormSecurity,
+} from '../lib/orderFormSecurity.js'
 
+async function handleOrderFormChallenge(req, res, redis) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  if (!isOrderFormSecurityConfigured()) {
+    return res.status(503).json({ error: 'Protection commande non configurée' })
+  }
+
+  const ip = getClientIp(req)
+  const allowed = await rateLimit(redis, `rate:order-challenge:${ip}`, 30, 3600)
+  if (!allowed) {
+    return res.status(429).json({ error: 'Trop de requêtes. Réessayez plus tard.' })
+  }
+
+  try {
+    const challenge = await createOrderFormChallenge(redis)
+    return res.status(200).json(challenge)
+  } catch (error) {
+    console.error('order-form-challenge error', error)
+    return res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
 function getPathname(req) {
   const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
   if (typeof forwarded === 'string' && forwarded.startsWith('/api/')) {
@@ -209,6 +238,10 @@ export default async function handler(req, res) {
   const path = getPathname(req)
 
   try {
+    if (path.endsWith('/order-form-challenge')) {
+      return handleOrderFormChallenge(req, res, redis)
+    }
+
     if (path.endsWith('/orders-replacement')) {
       return handleOrdersReplacement(req, res, redis)
     }
@@ -256,54 +289,79 @@ export default async function handler(req, res) {
       }
 
       const body = parseBody(req)
-      if (!isValidOrderPayload(body)) {
+      const formSecurity = body._formSecurity
+      const orderPayload = { ...body }
+      delete orderPayload._formSecurity
+
+      if (!isValidOrderPayload(orderPayload)) {
         return res.status(400).json({ error: 'Invalid order payload' })
       }
 
       const orders = await loadOrders(redis)
-      const index = orders.findIndex((item) => item.id === body.id)
+      const index = orders.findIndex((item) => item.id === orderPayload.id)
       const isNewOrder = index === -1
 
       if (isNewOrder) {
         if (adminSession) {
           const prepared = prepareNewOrder(
-            { ...body, amount: CARD_PRICE, orderType: body.orderType ?? 'initial' },
-            body.activationCode
+            { ...orderPayload, amount: CARD_PRICE, orderType: orderPayload.orderType ?? 'initial' },
+            orderPayload.activationCode
           )
           const activationCode = prepared._plainActivationCode
           delete prepared._plainActivationCode
 
           const { isNew } = await upsertOrder(redis, prepared)
-          if (isNew && !body.activationCode) {
+          if (isNew && !orderPayload.activationCode) {
             await sendNewOrderEmails(redis, prepared, activationCode)
           }
 
           return res.status(200).json({ ok: true, order: stripOrderForAdmin(prepared) })
         }
 
+        const allowedNew = await rateLimit(redis, `rate:orders-new:${ip}`, 5, 3600)
+        if (!allowedNew) {
+          return res.status(429).json({ error: 'Trop de commandes. Réessayez plus tard.' })
+        }
+
+        const orderEmail = typeof orderPayload.email === 'string' ? orderPayload.email.trim().toLowerCase() : ''
+        if (orderEmail) {
+          const allowedEmail = await rateLimit(redis, `rate:orders-new-email:${orderEmail}`, 2, 86_400)
+          if (!allowedEmail) {
+            return res.status(429).json({ error: 'Une commande récente existe déjà pour cet email.' })
+          }
+        }
+
+        const security = await verifyOrderFormSecurity(redis, ip, formSecurity)
+        if (!security.ok) {
+          return res.status(400).json({ error: security.error })
+        }
+
         if (!clientSession) {
           return res.status(401).json({ error: 'Session client requise pour créer une commande' })
         }
-        if (body.userId !== clientSession.userId) {
+        if (orderPayload.userId !== clientSession.userId) {
           return res.status(403).json({ error: 'Commande non autorisée pour ce compte' })
         }
 
-        if (body.orderType === 'replacement') {
+        if (orderPayload.orderType === 'replacement') {
           return res.status(400).json({ error: 'Utilisez la commande de remplacement depuis votre profil' })
         }
 
-        if (hasPendingInitialOrder(orders, body.userId)) {
+        if (hasPendingInitialOrder(orders, orderPayload.userId)) {
           return res.status(409).json({ error: 'Une commande est déjà en cours pour ce compte' })
         }
 
-        const prepared = prepareNewOrder({ ...body, amount: CARD_PRICE, orderType: 'initial' }, body.activationCode)
+        const prepared = prepareNewOrder(
+          { ...orderPayload, amount: CARD_PRICE, orderType: 'initial' },
+          orderPayload.activationCode
+        )
         const activationCode = prepared._plainActivationCode
         delete prepared._plainActivationCode
 
         const { isNew } = await upsertOrder(redis, prepared)
         if (isNew) {
           await sendNewOrderEmails(redis, prepared, activationCode)
-          const user = await getUserById(redis, body.userId)
+          const user = await getUserById(redis, orderPayload.userId)
           if (user) {
             await saveUser(redis, {
               ...user,
@@ -322,7 +380,7 @@ export default async function handler(req, res) {
       }
 
       const previous = orders[index]
-      const merged = { ...previous, ...body }
+      const merged = { ...previous, ...orderPayload }
       await upsertOrder(redis, merged)
 
       if (merged.status === 'shipped' && previous?.status !== 'shipped') {

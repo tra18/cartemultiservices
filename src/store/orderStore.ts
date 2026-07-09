@@ -12,6 +12,7 @@ import {
   syncOrderToServer,
 } from '../services/orderServer'
 import { getClientAuthHeaders } from '../services/clientAuth'
+import type { OrderFormSecurityPayload } from '../services/orderFormSecurity'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
 
@@ -101,7 +102,11 @@ export function getCardOrderByToken(cardToken: string): CardOrder | undefined {
   return loadCardOrders().find((o) => o.cardToken?.toUpperCase() === token)
 }
 
-export async function createCardOrder(userId: string, data: CardOrderFormData): Promise<CardOrder> {
+export async function createCardOrder(
+  userId: string,
+  data: CardOrderFormData,
+  formSecurity?: OrderFormSecurityPayload
+): Promise<CardOrder> {
   const now = new Date().toISOString()
   const safeEmail = normalizeEmail(data.email)
   const safeName = sanitizeText(data.fullName, 80)
@@ -123,7 +128,7 @@ export async function createCardOrder(userId: string, data: CardOrderFormData): 
     createdAt: now,
   }
 
-  const synced = normalizeOrder(await syncOrderToServer(order))
+  const synced = normalizeOrder(await syncOrderToServer(order, { formSecurity }))
   const orders = loadCardOrders().filter((o) => o.id !== synced.id)
   saveCardOrders([synced, ...orders])
   recordCardOrderRevenue(synced.id, synced.amount, safeName)

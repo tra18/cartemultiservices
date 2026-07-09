@@ -2,7 +2,7 @@ const RATE_LIMIT_KEY = 'carte-multiservice-order-attempts'
 const FORM_TOKEN_KEY = 'carte-multiservice-form-token'
 const MAX_ATTEMPTS = 5
 const WINDOW_MS = 60 * 60 * 1000 // 1 heure
-const MIN_FORM_DURATION_MS = 4000 // anti-bot : 4 secondes minimum
+const MIN_FORM_DURATION_MS = 8000 // anti-bot : 8 secondes minimum (validé côté serveur)
 
 interface RateLimitEntry {
   count: number
