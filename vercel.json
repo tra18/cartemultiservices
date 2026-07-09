@@ -9,48 +9,12 @@
       }
     },
     {
-      "src": "api/send-email.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/orders.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/admin-auth.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/wallet.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/client-auth.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/finance.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/card.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/send-email", "dest": "/api/send-email.js" },
-    { "src": "/api/orders-mine", "dest": "/api/orders.js" },
-    { "src": "/api/orders-admin", "dest": "/api/orders.js" },
-    { "src": "/api/orders", "dest": "/api/orders.js" },
-    { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
-    { "src": "/api/wallet-health", "dest": "/api/wallet.js" },
-    { "src": "/api/wallet", "dest": "/api/wallet.js" },
-    { "src": "/api/client-auth", "dest": "/api/client-auth.js" },
-    { "src": "/api/finance", "dest": "/api/finance.js" },
-    { "src": "/api/card-activate", "dest": "/api/card.js" },
-    { "src": "/api/digital-card", "dest": "/api/card.js" },
-    { "src": "/api/verify-card-pin", "dest": "/api/card.js" },
-    { "src": "/api/card-security", "dest": "/api/card.js" },
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
