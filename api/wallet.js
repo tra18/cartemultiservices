@@ -1,4 +1,4 @@
-import { getAppleWalletErrorMessage } from './_lib/applePassDiagnostics.js'
+import { diagnoseAppleWalletConfig, getAppleWalletErrorMessage } from './_lib/applePassDiagnostics.js'
 import { createAppleWalletPass } from './_lib/applePass.js'
 import { createGoogleWalletSaveUrl } from './_lib/googleWallet.js'
 import { sendTypedEmail } from './_lib/mailer.js'
@@ -11,7 +11,28 @@ import {
 } from './_lib/walletCommon.js'
 import { getRedis } from './_lib/security.js'
 
+function getPathname(req) {
+  const raw = req.url ?? ''
+  if (raw.startsWith('/')) return raw.split('?')[0]
+  try {
+    return new URL(raw, 'http://localhost').pathname
+  } catch {
+    return raw.split('?')[0]
+  }
+}
+
 export default async function handler(req, res) {
+  const path = getPathname(req)
+
+  if (path.endsWith('/wallet-health')) {
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET')
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
+    const report = diagnoseAppleWalletConfig()
+    return res.status(report.ok ? 200 : 500).json(report)
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })

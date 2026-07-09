@@ -25,10 +25,6 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/wallet-health.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "api/client-auth.js",
       "use": "@vercel/node"
     },
@@ -37,44 +33,24 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/card-activate.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/orders-mine.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/orders-admin.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/digital-card.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/verify-card-pin.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/card-security.js",
+      "src": "api/card.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     { "src": "/api/send-email", "dest": "/api/send-email.js" },
+    { "src": "/api/orders-mine", "dest": "/api/orders.js" },
+    { "src": "/api/orders-admin", "dest": "/api/orders.js" },
     { "src": "/api/orders", "dest": "/api/orders.js" },
     { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
+    { "src": "/api/wallet-health", "dest": "/api/wallet.js" },
     { "src": "/api/wallet", "dest": "/api/wallet.js" },
-    { "src": "/api/wallet-health", "dest": "/api/wallet-health.js" },
     { "src": "/api/client-auth", "dest": "/api/client-auth.js" },
     { "src": "/api/finance", "dest": "/api/finance.js" },
-    { "src": "/api/card-activate", "dest": "/api/card-activate.js" },
-    { "src": "/api/orders-mine", "dest": "/api/orders-mine.js" },
-    { "src": "/api/orders-admin", "dest": "/api/orders-admin.js" },
-    { "src": "/api/digital-card", "dest": "/api/digital-card.js" },
-    { "src": "/api/verify-card-pin", "dest": "/api/verify-card-pin.js" },
-    { "src": "/api/card-security", "dest": "/api/card-security.js" },
+    { "src": "/api/card-activate", "dest": "/api/card.js" },
+    { "src": "/api/digital-card", "dest": "/api/card.js" },
+    { "src": "/api/verify-card-pin", "dest": "/api/card.js" },
+    { "src": "/api/card-security", "dest": "/api/card.js" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],

@@ -1,9 +1,15 @@
 import { sendTypedEmail } from './_lib/mailer.js'
 import {
+  approveOrder,
+  getOrderByUserId,
   isValidOrderPayload,
   loadOrders,
   prepareNewOrder,
+  produceOrderCard,
+  rejectOrder,
+  shipOrder,
   stripOrderForAdmin,
+  stripOrderForClient,
   upsertOrder,
 } from './_lib/ordersStore.js'
 import { verifyClientSession } from './_lib/clientSessions.js'
@@ -14,6 +20,16 @@ import {
   rateLimit,
   verifyAdminSession,
 } from './_lib/security.js'
+
+function getPathname(req) {
+  const raw = req.url ?? ''
+  if (raw.startsWith('/')) return raw.split('?')[0]
+  try {
+    return new URL(raw, 'http://localhost').pathname
+  } catch {
+    return raw.split('?')[0]
+  }
+}
 
 async function sendNewOrderEmails(order, activationCode) {
   await sendTypedEmail('activation_code', {
@@ -33,13 +49,106 @@ async function sendNewOrderEmails(order, activationCode) {
   })
 }
 
+async function handleOrdersMine(req, res, redis) {
+  const session = await verifyClientSession(req, redis)
+  if (!session) {
+    return res.status(401).json({ error: 'Session expirée ou utilisée sur un autre appareil' })
+  }
+
+  const order = await getOrderByUserId(redis, session.userId)
+  return res.status(200).json({ order: stripOrderForClient(order) })
+}
+
+async function handleOrdersAdmin(req, res, redis) {
+  const session = await verifyAdminSession(req, redis)
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const ip = getClientIp(req)
+  const allowed = await rateLimit(redis, `rate:orders-admin:${ip}`, 120, 3600)
+  if (!allowed) {
+    return res.status(429).json({ error: 'Too many requests' })
+  }
+
+  const body = parseBody(req)
+  const action = typeof body.action === 'string' ? body.action : ''
+  const orderId = typeof body.orderId === 'string' ? body.orderId : ''
+
+  if (!orderId) {
+    return res.status(400).json({ error: 'orderId requis' })
+  }
+
+  try {
+    if (action === 'approve') {
+      const order = await approveOrder(redis, orderId, session.email)
+      await sendTypedEmail('order_approved', {
+        email: order.email,
+        fullName: order.userName,
+      })
+      return res.status(200).json({ ok: true, order })
+    }
+
+    if (action === 'reject') {
+      const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
+      if (!reason) {
+        return res.status(400).json({ error: 'Motif de refus requis' })
+      }
+      const order = await rejectOrder(redis, orderId, reason, session.email)
+      await sendTypedEmail('order_rejected', {
+        email: order.email,
+        fullName: order.userName,
+        reason,
+      })
+      return res.status(200).json({ ok: true, order })
+    }
+
+    if (action === 'produce') {
+      const order = await produceOrderCard(redis, orderId)
+      return res.status(200).json({ ok: true, order })
+    }
+
+    if (action === 'ship') {
+      const order = await shipOrder(redis, orderId)
+      await sendTypedEmail('card_shipped', {
+        email: order.email,
+        fullName: order.userName,
+      })
+      return res.status(200).json({ ok: true, order })
+    }
+
+    return res.status(400).json({ error: 'Action invalide' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Action échouée'
+    return res.status(400).json({ error: message })
+  }
+}
+
 export default async function handler(req, res) {
   const redis = getRedis()
   if (!redis) {
     return res.status(503).json({ error: 'Order storage not configured' })
   }
 
+  const path = getPathname(req)
+
   try {
+    if (path.endsWith('/orders-mine')) {
+      if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET')
+        return res.status(405).json({ error: 'Method not allowed' })
+      }
+      return handleOrdersMine(req, res, redis)
+    }
+
+    if (path.endsWith('/orders-admin')) {
+      if (req.method !== 'POST') {
+        res.setHeader('Allow', 'POST')
+        return res.status(405).json({ error: 'Method not allowed' })
+      }
+      return handleOrdersAdmin(req, res, redis)
+    }
+
     if (req.method === 'GET') {
       const session = await verifyAdminSession(req, redis)
       if (!session) {
