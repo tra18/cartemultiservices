@@ -22,6 +22,7 @@ import {
 } from '../services/emailService'
 import { fetchFinanceMerchant, upsertFinanceMerchant } from '../services/financeServer'
 import { calculateAdditionalCategoryPrice, calculateMerchantRegistrationPrice } from '../utils/pricing'
+import { clearUserActivity, markUserActivity } from '../constants/session'
 
 const SESSION_KEY = 'carte-multiservice-merchant-session'
 
@@ -56,6 +57,7 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       if (merchant) {
         setMerchants(all)
         setCurrentMerchant(merchant)
+        markUserActivity()
         void upsertFinanceMerchant(merchant)
       }
     }
@@ -94,6 +96,7 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
       setCurrentMerchant(merchant)
     })
     void upsertFinanceMerchant(merchant)
+    markUserActivity()
     return null
   }
 
@@ -153,12 +156,14 @@ Système Guinée Multiservices`
       setCurrentMerchant(newMerchant)
     })
     void upsertFinanceMerchant(newMerchant)
+    markUserActivity()
     return null
   }
 
   const logout = () => {
     setCurrentMerchant(null)
     localStorage.removeItem(SESSION_KEY)
+    clearUserActivity()
   }
 
   const addCategory = (category: Category, _paymentMethod: string): string | null => {

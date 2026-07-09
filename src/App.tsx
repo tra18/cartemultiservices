@@ -45,6 +45,7 @@ import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
 import { AdminPrintCard } from './pages/admin/AdminPrintCard'
 import { AdminFinance } from './pages/admin/AdminFinance'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
+import { IdleSessionGuard } from './components/IdleSessionGuard'
 
 export default function App() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
       <AuthProvider>
         <MerchantAuthProvider>
           <BrowserRouter>
+            <IdleSessionGuard />
             <Routes>
             {/* Portail admin */}
             <Route

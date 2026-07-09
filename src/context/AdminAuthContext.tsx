@@ -10,6 +10,7 @@ import {
 
 import { ADMIN_EMAIL } from '../constants/brand'
 import { ADMIN_TOKEN_KEY } from '../services/apiClient'
+import { markUserActivity, clearUserActivity } from '../constants/session'
 
 interface AdminAuthContextValue {
   isAuthenticated: boolean
@@ -51,6 +52,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       if (email) {
         setIsAuthenticated(true)
         setAdminEmail(email)
+        markUserActivity()
       } else {
         sessionStorage.removeItem(ADMIN_TOKEN_KEY)
       }
@@ -80,6 +82,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true)
         setAdminEmail(data.email ?? ADMIN_EMAIL)
       })
+      markUserActivity()
       return null
     } catch {
       return 'Connexion administrateur impossible'
@@ -99,6 +102,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       }
     }
     sessionStorage.removeItem(ADMIN_TOKEN_KEY)
+    clearUserActivity()
     setIsAuthenticated(false)
     setAdminEmail(null)
   }, [])

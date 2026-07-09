@@ -30,6 +30,7 @@ import {
   patchClientProfile,
   registerClient,
 } from '../services/clientAuth'
+import { clearUserActivity, markUserActivity } from '../constants/session'
 
 function normalizeUser(user: UserAccount): UserAccount {
   return {
@@ -92,7 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     fetchClientSession()
       .then((user) => {
-        if (!cancelled && user) setCurrentUser(normalizeUser(user))
+        if (!cancelled && user) {
+          setCurrentUser(normalizeUser(user))
+          markUserActivity()
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false)
@@ -118,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await loginClient(email, password)
     if (result.error || !result.user) return result.error ?? 'Connexion échouée'
     setCurrentUser(normalizeUser(result.user))
+    markUserActivity()
     return null
   }
 
@@ -128,11 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await registerClient(data)
     if (result.error || !result.user) return result.error ?? 'Inscription échouée'
     setCurrentUser(normalizeUser(result.user))
+    markUserActivity()
     return null
   }
 
   const logout = async () => {
     await logoutClient()
+    clearUserActivity()
     setSessionCardPin(null)
     setCurrentUser(null)
   }
