@@ -21,6 +21,7 @@ const ROUTES = {
   '/api/orders': orders,
   '/api/orders-mine': orders,
   '/api/orders-admin': orders,
+  '/api/orders-replacement': orders,
   '/api/admin-auth': adminAuth,
   '/api/wallet': wallet,
   '/api/wallet-health': wallet,

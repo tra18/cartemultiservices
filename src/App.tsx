@@ -35,6 +35,7 @@ import { BuyFuel } from './pages/BuyFuel'
 import { MyCardOrder } from './pages/MyCardOrder'
 import { CardSecurity } from './pages/CardSecurity'
 import { Profile } from './pages/Profile'
+import { OrderReplacementCard } from './pages/OrderReplacementCard'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { OrderCard } from './pages/OrderCard'
 import { Home } from './pages/Home'
@@ -166,6 +167,7 @@ export default function App() {
               <Route path="/ma-commande" element={<MyCardOrder />} />
               <Route path="/activer-carte" element={<ActivateCard />} />
               <Route path="/securite-carte" element={<CardSecurity />} />
+              <Route path="/commander-remplacement" element={<OrderReplacementCard />} />
               <Route path="/profil" element={<Profile />} />
               <Route path="/historique" element={<History />} />
             </Route>

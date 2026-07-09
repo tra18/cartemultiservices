@@ -12,6 +12,7 @@ import {
   normalizeOrderStatus,
   syncOrderToServer,
 } from '../services/orderServer'
+import { getClientAuthHeaders } from '../services/clientAuth'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
 
@@ -76,9 +77,12 @@ export function getCardOrderById(orderId: string): CardOrder | undefined {
 }
 
 export function getCardOrderByUserId(userId: string): CardOrder | undefined {
-  return loadCardOrders().find(
-    (o) => o.userId === userId && normalizeOrderStatus(o.status) !== 'rejected'
-  )
+  const userOrders = loadCardOrders()
+    .filter((o) => o.userId === userId && normalizeOrderStatus(o.status) !== 'rejected')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  const inProgress = userOrders.find((o) => !isOrderActivated(o))
+  return inProgress ?? userOrders[0]
 }
 
 export function getCardOrderByToken(cardToken: string): CardOrder | undefined {
@@ -112,6 +116,39 @@ export async function createCardOrder(userId: string, data: CardOrderFormData): 
   const orders = loadCardOrders().filter((o) => o.id !== synced.id)
   saveCardOrders([synced, ...orders])
   recordCardOrderRevenue(synced.id, synced.amount, safeName)
+  return synced
+}
+
+export interface ReplacementOrderData {
+  phone?: string
+  address: string
+  city: string
+  deliveryMethod: CardOrder['deliveryMethod']
+  paymentMethod: string
+}
+
+export async function createReplacementCardOrder(
+  _userId: string,
+  data: ReplacementOrderData
+): Promise<CardOrder> {
+  const response = await fetch('/api/orders-replacement', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getClientAuthHeaders() },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string }
+    throw new Error(payload.error ?? 'Commande de remplacement échouée')
+  }
+
+  const payload = (await response.json()) as { order?: CardOrder }
+  if (!payload.order) throw new Error('Commande de remplacement échouée')
+
+  const synced = normalizeOrder(payload.order)
+  const orders = loadCardOrders().filter((o) => o.id !== synced.id)
+  saveCardOrders([synced, ...orders])
+  recordCardOrderRevenue(synced.id, synced.amount, synced.userName)
   return synced
 }
 

@@ -121,12 +121,13 @@ export async function verifyCardPinOnServer(
 
 export async function cardSecurityAction(
   action: 'block' | 'unblock',
-  pin?: string
+  pin?: string,
+  reason?: 'loss'
 ): Promise<{ ok: boolean; error?: string; cardStatus?: string }> {
   const response = await fetch('/api/card-security', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getClientAuthHeaders() },
-    body: JSON.stringify({ action, pin }),
+    body: JSON.stringify({ action, pin, reason }),
   })
   const data = (await response.json().catch(() => ({}))) as {
     ok?: boolean

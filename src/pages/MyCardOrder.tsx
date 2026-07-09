@@ -54,9 +54,12 @@ export function MyCardOrder() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Ma commande de carte</h2>
+        <h2 className="text-xl font-bold text-slate-900">
+          {order.orderType === 'replacement' ? 'Ma carte de remplacement' : 'Ma commande de carte'}
+        </h2>
         <p className="mt-1 text-sm text-slate-500">
           Réf. {order.id.slice(0, 8).toUpperCase()}
+          {order.orderType === 'replacement' && ' · Tarif perte/vol (-50 %)'}
         </p>
       </div>
 

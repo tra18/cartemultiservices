@@ -1,22 +1,28 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Lock, ShieldCheck, ShieldOff } from 'lucide-react'
+import { AlertTriangle, CreditCard, Lock, ShieldCheck, ShieldOff } from 'lucide-react'
 import { CardPinModal } from '../components/CardPinModal'
 import { ResetCardPinPanel } from '../components/ResetCardPinPanel'
 import { useAuth } from '../context/AuthContext'
 import { maskCardNumber } from '../utils/card'
+import { isBlockedForLoss } from '../utils/cardReplacement'
 import { getEffectiveCardNumber, isCardUsable } from '../utils/cardStatus'
+import { formatCurrency } from '../utils/currency'
+import { getReplacementCardPrice } from '../utils/pricing'
 
 export function CardSecurity() {
   const { currentUser, blockCard, unblockCard } = useAuth()
   const [showUnblockPin, setShowUnblockPin] = useState(false)
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false)
   const [pinError, setPinError] = useState('')
   const [message, setMessage] = useState('')
 
   if (!currentUser) return null
 
   const isBlocked = currentUser.cardStatus === 'blocked'
+  const blockedForLoss = isBlockedForLoss(currentUser)
   const canManageSecurity = isCardUsable(currentUser) || isBlocked
+  const replacementPrice = getReplacementCardPrice()
 
   const handleBlock = async () => {
     setMessage('')
@@ -25,7 +31,8 @@ export function CardSecurity() {
       setMessage(err)
       return
     }
-    setMessage('Carte bloquée. Aucun paiement ne pourra être effectué.')
+    setShowBlockConfirm(false)
+    setMessage('Perte ou vol déclaré. Votre carte est bloquée. Vous pouvez commander une carte de remplacement.')
   }
 
   const handleUnblock = async (pin: string) => {
@@ -69,8 +76,31 @@ export function CardSecurity() {
             <div className="text-sm text-red-800">
               <p className="font-semibold text-red-900">Carte bloquée</p>
               <p className="mt-1">
-                Tous les paiements et recharges sont suspendus. Débloquez avec votre code PIN.
+                {blockedForLoss
+                  ? 'Perte ou vol déclaré. Tous les paiements sont suspendus. Commandez une nouvelle carte à tarif réduit.'
+                  : 'Tous les paiements et recharges sont suspendus. Débloquez avec votre code PIN ou réinitialisez-le ci-dessous.'}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {blockedForLoss && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <div className="flex items-start gap-3">
+            <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+            <div className="text-sm text-indigo-900">
+              <p className="font-semibold">Commander une carte de remplacement</p>
+              <p className="mt-1">
+                Tarif : <strong>{formatCurrency(replacementPrice)}</strong> (50 % du prix initial).
+                Votre solde est conservé.
+              </p>
+              <Link
+                to="/commander-remplacement"
+                className="mt-3 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Commander ma nouvelle carte
+              </Link>
             </div>
           </div>
         </div>
@@ -100,8 +130,8 @@ export function CardSecurity() {
         <div className="flex gap-2">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p>
-            En cas de <strong>perte ou vol</strong>, bloquez immédiatement votre carte. Vous
-            recevrez une confirmation par email.
+            En cas de <strong>perte ou vol</strong>, bloquez immédiatement votre carte puis commandez
+            une carte de remplacement à -50 %.
           </p>
         </div>
       </div>
@@ -109,15 +139,15 @@ export function CardSecurity() {
       {isCardUsable(currentUser) && !isBlocked && (
         <button
           type="button"
-          onClick={handleBlock}
+          onClick={() => setShowBlockConfirm(true)}
           className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-200 bg-red-50 py-3.5 font-semibold text-red-700 hover:bg-red-100"
         >
           <ShieldOff className="h-5 w-5" />
-          Bloquer ma carte (perte / vol)
+          Déclarer perte ou vol
         </button>
       )}
 
-      {isBlocked && (
+      {isBlocked && !blockedForLoss && (
         <button
           type="button"
           onClick={() => {
@@ -129,6 +159,34 @@ export function CardSecurity() {
           <ShieldCheck className="h-5 w-5" />
           Débloquer ma carte
         </button>
+      )}
+
+      {showBlockConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">Déclarer perte ou vol ?</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Votre carte sera immédiatement bloquée. Vous pourrez ensuite commander une nouvelle carte
+              à <strong>{formatCurrency(replacementPrice)}</strong> (50 % du tarif initial).
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBlockConfirm(false)}
+                className="flex-1 rounded-xl border border-slate-200 py-3 font-medium text-slate-600"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleBlock}
+                className="flex-1 rounded-xl bg-red-600 py-3 font-semibold text-white hover:bg-red-700"
+              >
+                Bloquer la carte
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <CardPinModal

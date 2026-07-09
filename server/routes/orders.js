@@ -1,6 +1,7 @@
 import { sendTypedEmail } from '../lib/mailer.js'
 import {
   approveOrder,
+  createReplacementOrder,
   getOrderByUserId,
   isValidOrderPayload,
   loadOrders,
@@ -20,6 +21,7 @@ import {
   rateLimit,
   verifyAdminSession,
 } from '../lib/security.js'
+import { CARD_PRICE } from '../lib/pricing.js'
 
 function getPathname(req) {
   const raw = req.url ?? ''
@@ -47,6 +49,55 @@ async function sendNewOrderEmails(order, activationCode) {
     amount: order.amount,
     deliveryMethod: order.deliveryMethod,
   })
+}
+
+async function sendReplacementOrderEmails(order, activationCode) {
+  await sendTypedEmail('activation_code', {
+    email: order.email,
+    fullName: order.userName,
+    activationCode,
+  })
+  await sendTypedEmail('card_replacement_ordered', {
+    email: order.email,
+    fullName: order.userName,
+    amount: order.amount,
+  })
+  await sendTypedEmail('admin_order_notification', {
+    customerName: order.userName,
+    customerEmail: order.email,
+    amount: order.amount,
+    deliveryMethod: order.deliveryMethod,
+    orderType: 'replacement',
+  })
+}
+
+async function handleOrdersReplacement(req, res, redis) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST')
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const session = await verifyClientSession(req, redis)
+  if (!session) {
+    return res.status(401).json({ error: 'Session expirée ou utilisée sur un autre appareil' })
+  }
+
+  const ip = getClientIp(req)
+  const allowed = await rateLimit(redis, `rate:orders-replacement:${session.userId}`, 5, 3600)
+  if (!allowed) {
+    return res.status(429).json({ error: 'Trop de demandes. Réessayez plus tard.' })
+  }
+
+  const body = parseBody(req)
+
+  try {
+    const { order, activationCode } = await createReplacementOrder(redis, session.user, body)
+    await sendReplacementOrderEmails(order, activationCode)
+    return res.status(200).json({ ok: true, order: stripOrderForClient(order) })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Commande échouée'
+    return res.status(400).json({ error: message })
+  }
 }
 
 async function handleOrdersMine(req, res, redis) {
@@ -133,6 +184,10 @@ export default async function handler(req, res) {
   const path = getPathname(req)
 
   try {
+    if (path.endsWith('/orders-replacement')) {
+      return handleOrdersReplacement(req, res, redis)
+    }
+
     if (path.endsWith('/orders-mine')) {
       if (req.method !== 'GET') {
         res.setHeader('Allow', 'GET')
@@ -185,7 +240,11 @@ export default async function handler(req, res) {
           return res.status(403).json({ error: 'Commande non autorisée pour ce compte' })
         }
 
-        const prepared = prepareNewOrder(body, body.activationCode)
+        if (body.orderType === 'replacement') {
+          return res.status(400).json({ error: 'Utilisez la commande de remplacement depuis votre profil' })
+        }
+
+        const prepared = prepareNewOrder({ ...body, amount: CARD_PRICE, orderType: 'initial' }, body.activationCode)
         const activationCode = prepared._plainActivationCode
         delete prepared._plainActivationCode
 

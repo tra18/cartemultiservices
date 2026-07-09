@@ -12,6 +12,9 @@ export interface UserAccount {
   balance: number
   transactions: Transaction[]
   cardStatus: CardStatus
+  blockReason?: 'loss' | 'pin_attempts' | 'manual'
+  blockedAt?: string
+  cardReplacementCount?: number
   /** Code PIN carte — 4 chiffres */
   cardPin?: string
   pinFailedAttempts?: number

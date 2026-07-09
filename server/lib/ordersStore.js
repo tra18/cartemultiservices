@@ -1,7 +1,8 @@
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 import { hashPassword, verifyPassword } from './password.js'
 import { getUserById, saveUser } from './clientUsers.js'
 import { isValidEmail, sanitizeText } from './security.js'
+import { CARD_PRICE, CARD_REPLACEMENT_PRICE } from './pricing.js'
 
 export const ORDERS_KEY = 'card-orders'
 
@@ -70,13 +71,98 @@ export async function getOrderById(redis, orderId) {
   return orders.find((item) => item.id === orderId) ?? null
 }
 
+export function getUserOrdersSorted(orders, userId) {
+  return orders
+    .filter((item) => item.userId === userId && normalizeOrderStatus(item.status) !== 'rejected')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
 export async function getOrderByUserId(redis, userId) {
   const orders = await loadOrders(redis)
+  const userOrders = getUserOrdersSorted(orders, userId)
+  const inProgress = userOrders.find((item) => !isOrderActivated(item))
+  return inProgress ?? userOrders[0] ?? null
+}
+
+export async function getActivatableOrder(redis, userId) {
+  const orders = await loadOrders(redis)
+  const userOrders = getUserOrdersSorted(orders, userId)
   return (
-    orders.find(
-      (item) => item.userId === userId && normalizeOrderStatus(item.status) !== 'rejected'
-    ) ?? null
+    userOrders.find(
+      (item) => !isOrderActivated(item) && normalizeOrderStatus(item.status) === 'shipped'
+    ) ??
+    userOrders.find((item) => !isOrderActivated(item)) ??
+    null
   )
+}
+
+export function canOrderReplacement(user) {
+  return user?.cardStatus === 'blocked' && user?.blockReason === 'loss'
+}
+
+export function hasPendingReplacementOrder(orders, userId) {
+  return orders.some(
+    (item) =>
+      item.userId === userId &&
+      item.orderType === 'replacement' &&
+      !isOrderActivated(item) &&
+      normalizeOrderStatus(item.status) !== 'rejected'
+  )
+}
+
+export async function createReplacementOrder(redis, user, body) {
+  if (!canOrderReplacement(user)) {
+    throw new Error('Commande de remplacement non autorisée. Déclarez d\'abord la perte de votre carte.')
+  }
+
+  const orders = await loadOrders(redis)
+  if (hasPendingReplacementOrder(orders, user.id)) {
+    throw new Error('Une commande de remplacement est déjà en cours')
+  }
+
+  const previousOrder = getUserOrdersSorted(orders, user.id).find((item) => isOrderActivated(item))
+
+  const now = new Date().toISOString()
+  const rawOrder = {
+    id: randomUUID(),
+    userId: user.id,
+    userName: user.fullName,
+    email: user.email,
+    phone: sanitizeText(body.phone ?? user.phone, 30),
+    address: sanitizeText(body.address ?? '', 200),
+    city: sanitizeText(body.city ?? 'Conakry', 60),
+    deliveryMethod: body.deliveryMethod ?? 'home',
+    amount: CARD_REPLACEMENT_PRICE,
+    paymentMethod: sanitizeText(body.paymentMethod ?? '', 80),
+    orderType: 'replacement',
+    replacesOrderId: previousOrder?.id,
+    createdAt: now,
+    activationEmailSentAt: now,
+    cardActivated: false,
+    status: 'pending_review',
+  }
+
+  const prepared = prepareNewOrder(rawOrder)
+  const activationCode = prepared._plainActivationCode
+  delete prepared._plainActivationCode
+
+  await upsertOrder(redis, prepared)
+
+  await saveUser(redis, {
+    ...user,
+    cardStatus: 'ordered',
+    cardNumber: 'En attente de carte',
+    digitalCardNumber: undefined,
+    digitalCardEnabledAt: undefined,
+    walletAppleAddedAt: undefined,
+    walletGoogleAddedAt: undefined,
+    blockReason: undefined,
+    blockedAt: undefined,
+    pinFailedAttempts: 0,
+    cardReplacementCount: (user.cardReplacementCount ?? 0) + 1,
+  })
+
+  return { order: prepared, activationCode }
 }
 
 export async function upsertOrder(redis, order) {
@@ -185,7 +271,7 @@ export async function shipOrder(redis, orderId) {
 }
 
 export async function activateOrderCard(redis, { userId, activationCode, cardPin, cardToken }) {
-  const order = await getOrderByUserId(redis, userId)
+  const order = await getActivatableOrder(redis, userId)
   if (!order) throw new Error('Aucune commande de carte trouvée')
   if (isOrderActivated(order)) throw new Error('Cette carte a déjà été activée')
 
@@ -245,6 +331,8 @@ export async function activateOrderCard(redis, { userId, activationCode, cardPin
     cardPinHash: hashPassword(pin),
     cardPin: undefined,
     pinFailedAttempts: 0,
+    blockReason: undefined,
+    blockedAt: undefined,
   })
 
   return { order: updated, cardNumber: order.cardNumber }
@@ -252,16 +340,23 @@ export async function activateOrderCard(redis, { userId, activationCode, cardPin
 
 export function prepareNewOrder(order, activationCode) {
   const code = activationCode || generateActivationCode()
+  const isReplacement = order.orderType === 'replacement'
   return {
     ...order,
+    orderType: isReplacement ? 'replacement' : order.orderType ?? 'initial',
+    amount: isReplacement ? CARD_REPLACEMENT_PRICE : order.amount ?? CARD_PRICE,
     status: 'pending_review',
     activationCode: undefined,
     activationCodeHash: hashPassword(code),
     cardActivated: false,
+    cardNumber: undefined,
+    cardToken: undefined,
+    producedAt: undefined,
     adminApprovedAt: undefined,
     approvedBy: undefined,
     rejectedAt: undefined,
     rejectionReason: undefined,
+    activatedAt: undefined,
     email: typeof order.email === 'string' ? order.email.trim().toLowerCase() : '',
     userName: sanitizeText(order.userName, 80),
     phone: sanitizeText(order.phone, 30),

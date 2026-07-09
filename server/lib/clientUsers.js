@@ -58,6 +58,9 @@ const SERVER_PATCHABLE_FIELDS = new Set([
   'walletGoogleAddedAt',
   'digitalCardNumber',
   'digitalCardEnabledAt',
+  'blockReason',
+  'blockedAt',
+  'cardReplacementCount',
 ])
 
 export function mergeUserPatch(user, patch, { server = false } = {}) {

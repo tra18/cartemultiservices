@@ -1,5 +1,10 @@
 export const CARD_PRICE = 100_000
 export const MERCHANT_REGISTRATION_PRICE = 200_000
+export const CARD_REPLACEMENT_DISCOUNT = 0.5
+
+export function getReplacementCardPrice(): number {
+  return Math.round(CARD_PRICE * CARD_REPLACEMENT_DISCOUNT)
+}
 
 /** Frais commerçant = prix de base × nombre de catégories */
 export function calculateMerchantRegistrationPrice(categoryCount: number): number {

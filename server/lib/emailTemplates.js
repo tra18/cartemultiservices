@@ -112,6 +112,22 @@ Cordialement,
 L'équipe Guinée Multiservices`,
       }
 
+    case 'card_replacement_ordered':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Commande de carte de remplacement confirmée',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Votre commande de carte de remplacement a bien été enregistrée.
+
+Montant payé : ${formatGnf(data.amount)} (tarif perte/vol — 50 % du prix initial)
+
+Votre solde reste disponible sur votre compte. Vous recevrez un code d'activation par email pour activer la nouvelle carte à réception.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
     case 'order_approved':
       return {
         to: sanitize(data.email, 80),
@@ -300,10 +316,13 @@ L'équipe Guinée Multiservices`,
     case 'admin_order_notification':
       return {
         to: ADMIN_EMAIL,
-        subject: 'Nouvelle commande client — Guinée Multiservices',
+        subject:
+          data.orderType === 'replacement'
+            ? 'Remplacement carte (perte/vol) — Guinée Multiservices'
+            : 'Nouvelle commande client — Guinée Multiservices',
         text: `Bonjour Admin,
 
-Nouvelle commande enregistrée.
+${data.orderType === 'replacement' ? 'Commande de remplacement (perte/vol déclarée).' : 'Nouvelle commande enregistrée.'}
 
   Client : ${sanitize(data.customerName)}
   Email : ${sanitize(data.customerEmail, 80)}

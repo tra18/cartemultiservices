@@ -166,7 +166,9 @@ async function handleVerifyPin(req, res, redis, session) {
     await saveUser(redis, {
       ...user,
       pinFailedAttempts: attempts,
-      ...(blocked ? { cardStatus: 'blocked' } : {}),
+      ...(blocked
+        ? { cardStatus: 'blocked', blockReason: 'pin_attempts', blockedAt: new Date().toISOString() }
+        : {}),
     })
     return res.status(400).json({
       ok: false,
@@ -202,7 +204,13 @@ async function handleCardSecurity(req, res, redis, session) {
     if (user.cardStatus === 'blocked') {
       return res.status(400).json({ error: 'Carte déjà bloquée' })
     }
-    await saveUser(redis, { ...user, cardStatus: 'blocked' })
+    const blockReason = body.reason === 'loss' ? 'loss' : 'manual'
+    await saveUser(redis, {
+      ...user,
+      cardStatus: 'blocked',
+      blockReason,
+      blockedAt: new Date().toISOString(),
+    })
     await sendTypedEmail('card_blocked', {
       email: user.email,
       fullName: user.fullName,
@@ -225,6 +233,8 @@ async function handleCardSecurity(req, res, redis, session) {
     ...user,
     cardStatus: 'active',
     pinFailedAttempts: 0,
+    blockReason: undefined,
+    blockedAt: undefined,
   })
 
   return res.status(200).json({ ok: true, cardStatus: 'active' })

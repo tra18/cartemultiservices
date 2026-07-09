@@ -15,6 +15,8 @@ export type CardOrderStatus =
   | 'delivered'
   | 'cancelled'
 
+export type CardOrderType = 'initial' | 'replacement'
+
 export type CardStatus = 'none' | 'ordered' | 'shipped' | 'active' | 'blocked'
 
 export interface CardOrder {
@@ -28,6 +30,8 @@ export interface CardOrder {
   deliveryMethod: DeliveryMethod
   amount: number
   paymentMethod: string
+  orderType?: CardOrderType
+  replacesOrderId?: string
   status: CardOrderStatus
   /** @deprecated Jamais renvoyé par le serveur — code envoyé par email uniquement */
   activationCode?: string

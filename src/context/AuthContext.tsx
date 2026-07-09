@@ -13,6 +13,8 @@ import { completeQrPayment } from '../store/platformStore'
 import {
   activateCardWithCode,
   createCardOrder,
+  createReplacementCardOrder,
+  type ReplacementOrderData,
 } from '../store/orderStore'
 import { cardSecurityAction, confirmCardPinResetOnServer, enableDigitalCardOnServer, requestCardPinResetOnServer, verifyCardPinOnServer } from '../services/orderServer'
 import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
@@ -63,6 +65,9 @@ interface AuthContextValue {
   recharge: (amount: number, method: string, pin: string) => Promise<boolean>
   orderCard: (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
+  ) => Promise<{ success: boolean; error?: string; order?: CardOrder }>
+  orderReplacementCard: (
+    data: ReplacementOrderData
   ) => Promise<{ success: boolean; error?: string; order?: CardOrder }>
   activateCard: (code: string, cardPin: string, cardToken?: string) => Promise<string | null>
   verifyCardPin: (pin: string) => Promise<string | null>
@@ -180,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (currentUser.cardStatus === 'blocked') return 'Carte déjà bloquée'
     if (!isCardUsable(currentUser)) return 'Carte non active'
 
-    const result = await cardSecurityAction('block')
+    const result = await cardSecurityAction('block', undefined, 'loss')
     if (!result.ok) return result.error ?? 'Échec du blocage'
     await refreshCurrentUser()
     return null
@@ -311,6 +316,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(normalizeUser(registration.user))
     resetRateLimit()
     return { success: true, order }
+  }
+
+  const orderReplacementCard = async (
+    data: ReplacementOrderData
+  ): Promise<{ success: boolean; error?: string; order?: CardOrder }> => {
+    if (!currentUser) return { success: false, error: 'Non connecté' }
+
+    try {
+      const order = await createReplacementCardOrder(currentUser.id, data)
+      await refreshCurrentUser()
+      return { success: true, order }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Commande échouée',
+      }
+    }
   }
 
   const markCardShipped = () => {
@@ -446,6 +468,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payViaQr,
         recharge,
         orderCard,
+        orderReplacementCard,
         activateCard,
         verifyCardPin,
         blockCard,

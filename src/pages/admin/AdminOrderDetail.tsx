@@ -124,6 +124,11 @@ export function AdminOrderDetail() {
         <p className="mt-1 text-sm text-slate-500">
           Réf. {order.id.slice(0, 8).toUpperCase()} ·{' '}
           {ORDER_STATUS_LABELS[status] ?? ORDER_STATUS_LABELS[order.status]}
+          {order.orderType === 'replacement' && (
+            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+              Remplacement perte/vol
+            </span>
+          )}
         </p>
       </div>
 
