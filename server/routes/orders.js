@@ -4,6 +4,7 @@ import {
   approveOrder,
   createReplacementOrder,
   getOrderByUserId,
+  hasPendingInitialOrder,
   isValidOrderPayload,
   loadOrders,
   prepareNewOrder,
@@ -15,6 +16,7 @@ import {
   upsertOrder,
 } from '../lib/ordersStore.js'
 import { verifyClientSession } from '../lib/clientSessions.js'
+import { getUserById, saveUser } from '../lib/clientUsers.js'
 import {
   getClientIp,
   getRedis,
@@ -290,6 +292,10 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Utilisez la commande de remplacement depuis votre profil' })
         }
 
+        if (hasPendingInitialOrder(orders, body.userId)) {
+          return res.status(409).json({ error: 'Une commande est déjà en cours pour ce compte' })
+        }
+
         const prepared = prepareNewOrder({ ...body, amount: CARD_PRICE, orderType: 'initial' }, body.activationCode)
         const activationCode = prepared._plainActivationCode
         delete prepared._plainActivationCode
@@ -297,6 +303,15 @@ export default async function handler(req, res) {
         const { isNew } = await upsertOrder(redis, prepared)
         if (isNew) {
           await sendNewOrderEmails(redis, prepared, activationCode)
+          const user = await getUserById(redis, body.userId)
+          if (user) {
+            await saveUser(redis, {
+              ...user,
+              cardStatus: 'ordered',
+              fullName: prepared.userName || user.fullName,
+              phone: prepared.phone || user.phone,
+            })
+          }
         }
 
         return res.status(200).json({ ok: true, order: stripOrderForAdmin(prepared) })

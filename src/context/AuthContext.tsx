@@ -16,7 +16,7 @@ import {
   createReplacementCardOrder,
   type ReplacementOrderData,
 } from '../store/orderStore'
-import { cardSecurityAction, confirmCardPinResetOnServer, enableDigitalCardOnServer, requestCardPinResetOnServer, verifyCardPinOnServer } from '../services/orderServer'
+import { cardSecurityAction, confirmCardPinResetOnServer, enableDigitalCardOnServer, fetchMyOrder, normalizeOrderStatus, requestCardPinResetOnServer, verifyCardPinOnServer } from '../services/orderServer'
 import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
 import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
@@ -301,6 +301,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const safeData = validated.data
+
+    if (currentUser) {
+      if (safeData.email.trim().toLowerCase() !== currentUser.email.toLowerCase()) {
+        return {
+          success: false,
+          error: `Utilisez l'email de votre compte connecté (${currentUser.email})`,
+        }
+      }
+      if (currentUser.cardStatus === 'blocked') {
+        return {
+          success: false,
+          error: 'Carte bloquée. Consultez Sécurité carte pour commander un remplacement.',
+        }
+      }
+
+      const existing = await fetchMyOrder()
+      if (existing && normalizeOrderStatus(existing.status) !== 'rejected') {
+        return {
+          success: false,
+          error: 'Vous avez déjà une commande en cours. Consultez « Ma commande ».',
+        }
+      }
+
+      const order = await createCardOrder(currentUser.id, safeData)
+      if (safeData.fullName !== currentUser.fullName || safeData.phone !== currentUser.phone) {
+        await patchClientProfile({ fullName: safeData.fullName, phone: safeData.phone })
+      }
+      await refreshCurrentUser()
+      resetRateLimit()
+      return { success: true, order }
+    }
 
     const emailAvailable = await checkEmailAvailable(safeData.email)
     if (!emailAvailable) {

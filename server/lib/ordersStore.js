@@ -110,6 +110,16 @@ export function hasPendingReplacementOrder(orders, userId) {
   )
 }
 
+export function hasPendingInitialOrder(orders, userId) {
+  return orders.some(
+    (item) =>
+      item.userId === userId &&
+      (item.orderType ?? 'initial') !== 'replacement' &&
+      !isOrderActivated(item) &&
+      normalizeOrderStatus(item.status) !== 'rejected'
+  )
+}
+
 export async function createReplacementOrder(redis, user, body) {
   if (!canOrderReplacement(user)) {
     throw new Error('Commande de remplacement non autorisée. Déclarez d\'abord la perte de votre carte.')

@@ -20,11 +20,12 @@ import { validateOrderStep1, validateOrderStep2, validatePassword } from '../uti
 import { CARD_PRICE } from '../utils/pricing'
 
 export function OrderCard() {
-  const { orderCard } = useAuth()
+  const { orderCard, currentUser } = useAuth()
   const navigate = useNavigate()
+  const isExistingAccount = Boolean(currentUser)
   const formStartedAt = useRef(Date.now())
   const [formToken, setFormToken] = useState('')
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(() => (currentUser ? 2 : 1))
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -47,6 +48,14 @@ export function OrderCard() {
     setFormToken(createFormToken())
     formStartedAt.current = Date.now()
   }, [])
+
+  useEffect(() => {
+    if (!currentUser) return
+    setFullName(currentUser.fullName)
+    setEmail(currentUser.email)
+    setPhone(currentUser.phone)
+    setStep(2)
+  }, [currentUser])
 
   const needsAddress = deliveryMethod === 'home'
   const paymentNeedsPhone = PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.needsPhone ?? false
@@ -88,6 +97,11 @@ export function OrderCard() {
         return
       }
       setStep(2)
+      return
+    }
+
+    if (isExistingAccount && (!fullName.trim() || !phone.trim())) {
+      setError('Nom et téléphone requis')
       return
     }
 
@@ -162,21 +176,23 @@ export function OrderCard() {
         )}
 
         <div className="mt-6 w-full space-y-3 text-left">
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-            <div className="flex items-start gap-3">
-              <UserPlus className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
-              <div className="text-sm text-indigo-800">
-                <p className="font-semibold text-indigo-900">Votre compte est créé</p>
-                <p className="mt-1">
-                  Connectez-vous plus tard avec <span className="font-medium">{orderEmail}</span> et
-                  le mot de passe choisi à la commande.
-                </p>
-                <p className="mt-2 text-xs text-indigo-600">
-                  Un email de bienvenue avec ces informations vous a été envoyé.
-                </p>
+          {!isExistingAccount && (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+              <div className="flex items-start gap-3">
+                <UserPlus className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+                <div className="text-sm text-indigo-800">
+                  <p className="font-semibold text-indigo-900">Votre compte est créé</p>
+                  <p className="mt-1">
+                    Connectez-vous plus tard avec <span className="font-medium">{orderEmail}</span> et
+                    le mot de passe choisi à la commande.
+                  </p>
+                  <p className="mt-2 text-xs text-indigo-600">
+                    Un email de bienvenue avec ces informations vous a été envoyé.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
             <div className="flex items-start gap-3">
@@ -195,7 +211,7 @@ export function OrderCard() {
         <div className="mt-4 w-full rounded-xl border border-slate-200 bg-white p-4 text-left text-sm text-slate-700">
           <p className="font-semibold text-slate-900">Prochaines étapes</p>
           <ol className="mt-2 list-inside list-decimal space-y-1">
-            <li>Conservez votre mot de passe en lieu sûr</li>
+            {!isExistingAccount && <li>Conservez votre mot de passe en lieu sûr</li>}
             <li>Attendez la livraison de votre carte (2-5 jours)</li>
             <li>Connectez-vous → Activez avec QR carte + code email</li>
           </ol>
@@ -232,13 +248,23 @@ export function OrderCard() {
       </div>
 
       <div className="mb-6 flex gap-2">
-        {[1, 2].map((s) => (
+        {(isExistingAccount ? [2] : [1, 2]).map((s) => (
           <div
             key={s}
             className={`h-1.5 flex-1 rounded-full ${step >= s ? 'bg-indigo-600' : 'bg-slate-200'}`}
           />
         ))}
       </div>
+
+      {isExistingAccount && (
+        <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
+          <p className="font-semibold text-indigo-900">Compte connecté</p>
+          <p className="mt-1">
+            Commande pour <span className="font-medium">{currentUser?.email}</span>. Complétez la
+            livraison et le paiement ci-dessous.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {/* Honeypot anti-bot — champ caché */}
@@ -407,7 +433,44 @@ export function OrderCard() {
 
         {step === 2 && (
           <>
-            <h2 className="font-semibold text-slate-800">2. Livraison et paiement</h2>
+            <h2 className="font-semibold text-slate-800">
+              {isExistingAccount ? 'Livraison et paiement' : '2. Livraison et paiement'}
+            </h2>
+
+            {isExistingAccount && (
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label htmlFor="existing-fullName" className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Nom complet
+                  </label>
+                  <input
+                    id="existing-fullName"
+                    required
+                    maxLength={80}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="existing-phone" className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Téléphone
+                  </label>
+                  <input
+                    id="existing-phone"
+                    required
+                    type="tel"
+                    maxLength={20}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  Email du compte : <span className="font-medium">{email}</span>
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Mode de livraison</label>
@@ -517,7 +580,7 @@ export function OrderCard() {
         )}
 
         <div className="flex gap-3">
-          {step === 2 && (
+          {step === 2 && !isExistingAccount && (
             <button
               type="button"
               onClick={() => setStep(1)}
@@ -544,14 +607,25 @@ export function OrderCard() {
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-600">
-        Déjà un compte ?{' '}
-        <Link to="/connexion" className="font-medium text-indigo-600">
-          Se connecter
-        </Link>
-        <span className="mx-2 text-slate-300">·</span>
-        <Link to="/mot-de-passe-oublie" className="font-medium text-slate-500 hover:text-indigo-600">
-          Mot de passe oublié
-        </Link>
+        {isExistingAccount ? (
+          <>
+            Besoin d&apos;aide ?{' '}
+            <Link to="/ma-commande" className="font-medium text-indigo-600">
+              Ma commande
+            </Link>
+          </>
+        ) : (
+          <>
+            Déjà un compte ?{' '}
+            <Link to="/connexion" className="font-medium text-indigo-600">
+              Se connecter
+            </Link>
+            <span className="mx-2 text-slate-300">·</span>
+            <Link to="/mot-de-passe-oublie" className="font-medium text-slate-500 hover:text-indigo-600">
+              Mot de passe oublié
+            </Link>
+          </>
+        )}
       </p>
     </div>
   )
