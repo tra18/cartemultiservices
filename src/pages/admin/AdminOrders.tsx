@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Package, Search } from 'lucide-react'
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
 import { hydrateOrdersFromServer, loadCardOrders } from '../../store/orderStore'
+import { normalizeOrderStatus } from '../../services/orderServer'
 import type { CardOrderStatus } from '../../types/order'
 import { formatCurrency } from '../../utils/currency'
 import { maskCardNumber } from '../../utils/card'
@@ -10,10 +11,12 @@ import { ADMIN_BASE_PATH } from '../../constants/brand'
 
 const STATUS_FILTERS: { value: 'all' | CardOrderStatus; label: string }[] = [
   { value: 'all', label: 'Toutes' },
-  { value: 'paid', label: 'Payées' },
+  { value: 'pending_review', label: 'À valider' },
+  { value: 'approved', label: 'Validées' },
   { value: 'processing', label: 'En production' },
   { value: 'shipped', label: 'Expédiées' },
-  { value: 'delivered', label: 'Activées' },
+  { value: 'activated', label: 'Activées' },
+  { value: 'rejected', label: 'Refusées' },
 ]
 
 export function AdminOrders() {
@@ -36,7 +39,7 @@ export function AdminOrders() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return orders
-      .filter((o) => filter === 'all' || o.status === filter)
+      .filter((o) => filter === 'all' || normalizeOrderStatus(o.status) === filter)
       .filter(
         (o) =>
           !q ||
@@ -48,9 +51,10 @@ export function AdminOrders() {
   }, [orders, filter, search])
 
   const counts = useMemo(() => {
-    const c = { paid: 0, processing: 0, shipped: 0, delivered: 0 }
+    const c = { pending_review: 0, approved: 0, processing: 0, shipped: 0, activated: 0 }
     for (const o of orders) {
-      if (o.status in c) c[o.status as keyof typeof c]++
+      const s = normalizeOrderStatus(o.status)
+      if (s in c) c[s as keyof typeof c]++
     }
     return c
   }, [orders])
@@ -72,22 +76,26 @@ export function AdminOrders() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-center">
-          <p className="text-2xl font-bold text-amber-700">{counts.paid}</p>
-          <p className="text-xs text-amber-600">À produire</p>
+          <p className="text-2xl font-bold text-amber-700">{counts.pending_review}</p>
+          <p className="text-xs text-amber-600">À valider</p>
+        </div>
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
+          <p className="text-2xl font-bold text-emerald-700">{counts.approved}</p>
+          <p className="text-xs text-emerald-600">Validées</p>
         </div>
         <div className="rounded-xl border border-violet-100 bg-violet-50 p-3 text-center">
           <p className="text-2xl font-bold text-violet-700">{counts.processing}</p>
-          <p className="text-xs text-violet-600">En production</p>
+          <p className="text-xs text-violet-600">Production</p>
         </div>
         <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
           <p className="text-2xl font-bold text-blue-700">{counts.shipped}</p>
           <p className="text-xs text-blue-600">Expédiées</p>
         </div>
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
-          <p className="text-2xl font-bold text-emerald-700">{counts.delivered}</p>
-          <p className="text-xs text-emerald-600">Activées</p>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+          <p className="text-2xl font-bold text-slate-700">{counts.activated}</p>
+          <p className="text-xs text-slate-600">Activées</p>
         </div>
       </div>
 
@@ -145,18 +153,22 @@ export function AdminOrders() {
               <div className="shrink-0 sm:text-right">
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    order.status === 'paid'
+                    ['pending_review', 'paid'].includes(normalizeOrderStatus(order.status))
                       ? 'bg-amber-100 text-amber-700'
-                      : order.status === 'processing'
-                        ? 'bg-violet-100 text-violet-700'
-                        : order.status === 'shipped'
-                          ? 'bg-blue-100 text-blue-700'
-                          : order.status === 'delivered'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-slate-100 text-slate-600'
+                      : normalizeOrderStatus(order.status) === 'approved'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : normalizeOrderStatus(order.status) === 'processing'
+                          ? 'bg-violet-100 text-violet-700'
+                          : normalizeOrderStatus(order.status) === 'shipped'
+                            ? 'bg-blue-100 text-blue-700'
+                            : ['activated', 'delivered'].includes(normalizeOrderStatus(order.status))
+                              ? 'bg-slate-200 text-slate-700'
+                              : normalizeOrderStatus(order.status) === 'rejected'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-slate-100 text-slate-600'
                   }`}
                 >
-                  {ORDER_STATUS_LABELS[order.status] ?? order.status}
+                  {ORDER_STATUS_LABELS[normalizeOrderStatus(order.status)] ?? order.status}
                 </span>
                 <p className="mt-1 text-sm font-semibold text-slate-700">
                   {formatCurrency(order.amount)}

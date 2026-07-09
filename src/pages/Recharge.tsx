@@ -42,13 +42,15 @@ export function Recharge() {
     }
 
     requestPin((pin) => {
-      const ok = recharge(selectedAmount, selectedMethod.label, pin)
-      if (ok) {
-        setSuccess(true)
-        setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2000)
-      } else {
-        setError('La recharge a échoué. Vérifiez votre PIN.')
-      }
+      void (async () => {
+        const ok = await recharge(selectedAmount, selectedMethod.label, pin)
+        if (ok) {
+          setSuccess(true)
+          setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2000)
+        } else {
+          setError('La recharge a échoué. Vérifiez votre PIN.')
+        }
+      })()
     })
   }
 

@@ -134,6 +134,21 @@ export default async function handler(req, res) {
       }
 
       const patch = parseBody(req)
+      const forbidden = [
+        'cardStatus',
+        'cardNumber',
+        'cardPin',
+        'cardPinHash',
+        'balance',
+        'transactions',
+        'digitalCardNumber',
+        'digitalCardEnabledAt',
+        'pinFailedAttempts',
+      ]
+      if (forbidden.some((key) => Object.prototype.hasOwnProperty.call(patch, key))) {
+        return res.status(403).json({ error: 'Modification non autorisée' })
+      }
+
       const updated = mergeUserPatch(session.user, patch)
       await saveUser(redis, updated)
 

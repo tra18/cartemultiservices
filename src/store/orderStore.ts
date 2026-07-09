@@ -1,11 +1,17 @@
-import type { CardStatus } from '../types/order'
 import type { CardOrder, CardOrderFormData } from '../types/order'
-import { generateCardNumber, generateCardToken } from '../utils/card'
-import { CARD_PRICE } from '../utils/pricing'
 import { recordCardOrderRevenue } from './treasuryStore'
+import { CARD_PRICE } from '../utils/pricing'
 import { normalizeEmail, sanitizeText } from '../utils/validation'
-import { mergeOrders, fetchServerOrders, syncOrderToServer } from '../services/orderServer'
-import { patchClientProfile } from '../services/clientAuth'
+import {
+  adminOrderAction,
+  activateCardOnServer,
+  fetchMyOrder,
+  fetchServerOrders,
+  isOrderActivated,
+  mergeOrders,
+  normalizeOrderStatus,
+  syncOrderToServer,
+} from '../services/orderServer'
 
 const ORDERS_KEY = 'carte-multiservice-card-orders'
 
@@ -23,16 +29,12 @@ function saveJson<T>(key: string, data: T) {
   localStorage.setItem(key, JSON.stringify(data))
 }
 
-function generateActivationCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
-
 function normalizeOrder(o: CardOrder): CardOrder {
   return {
     ...o,
+    status: normalizeOrderStatus(o.status) as CardOrder['status'],
     activationEmailSentAt: o.activationEmailSentAt ?? o.createdAt,
-    cardActivated: o.cardActivated ?? false,
+    cardActivated: o.cardActivated ?? isOrderActivated(o),
   }
 }
 
@@ -55,12 +57,28 @@ export async function hydrateOrdersFromServer() {
   }
 }
 
+export async function hydrateMyOrderFromServer(userId: string): Promise<CardOrder | null> {
+  try {
+    const order = await fetchMyOrder()
+    if (!order) return getCardOrderByUserId(userId) ?? null
+
+    const normalized = normalizeOrder(order)
+    const orders = loadCardOrders().filter((o) => o.id !== normalized.id)
+    saveCardOrders([normalized, ...orders])
+    return normalized
+  } catch {
+    return getCardOrderByUserId(userId) ?? null
+  }
+}
+
 export function getCardOrderById(orderId: string): CardOrder | undefined {
   return loadCardOrders().find((o) => o.id === orderId)
 }
 
 export function getCardOrderByUserId(userId: string): CardOrder | undefined {
-  return loadCardOrders().find((o) => o.userId === userId && o.status !== 'cancelled')
+  return loadCardOrders().find(
+    (o) => o.userId === userId && normalizeOrderStatus(o.status) !== 'rejected'
+  )
 }
 
 export function getCardOrderByToken(cardToken: string): CardOrder | undefined {
@@ -68,17 +86,8 @@ export function getCardOrderByToken(cardToken: string): CardOrder | undefined {
   return loadCardOrders().find((o) => o.cardToken?.toUpperCase() === token)
 }
 
-function syncUserCardStatus(_userId: string, cardStatus: CardStatus, cardNumber?: string) {
-  void patchClientProfile({
-    cardStatus,
-    ...(cardNumber ? { cardNumber } : {}),
-  })
-}
-
-export function createCardOrder(userId: string, data: CardOrderFormData): CardOrder {
-  const activationCode = generateActivationCode()
+export async function createCardOrder(userId: string, data: CardOrderFormData): Promise<CardOrder> {
   const now = new Date().toISOString()
-
   const safeEmail = normalizeEmail(data.email)
   const safeName = sanitizeText(data.fullName, 80)
 
@@ -93,141 +102,101 @@ export function createCardOrder(userId: string, data: CardOrderFormData): CardOr
     deliveryMethod: data.deliveryMethod,
     amount: CARD_PRICE,
     paymentMethod: data.paymentMethod,
-    status: 'paid',
-    activationCode,
+    status: 'pending_review',
     activationEmailSentAt: now,
     cardActivated: false,
     createdAt: now,
   }
 
-  const orders = loadCardOrders()
-  saveCardOrders([order, ...orders])
-  recordCardOrderRevenue(order.id, CARD_PRICE, safeName)
-  void syncOrderToServer(order)
-  return order
+  const synced = normalizeOrder(await syncOrderToServer(order))
+  const orders = loadCardOrders().filter((o) => o.id !== synced.id)
+  saveCardOrders([synced, ...orders])
+  recordCardOrderRevenue(synced.id, synced.amount, safeName)
+  return synced
 }
 
-export function produceCard(
+export async function approveOrder(
   orderId: string
-): { success: boolean; error?: string; order?: CardOrder } {
-  const orders = loadCardOrders()
-  const index = orders.findIndex((o) => o.id === orderId)
-  if (index === -1) return { success: false, error: 'Commande introuvable' }
-
-  const order = orders[index]
-  if (order.status === 'cancelled' || order.status === 'delivered') {
-    return { success: false, error: 'Cette commande ne peut plus être produite' }
+): Promise<{ success: boolean; error?: string; order?: CardOrder }> {
+  const result = await adminOrderAction('approve', orderId)
+  if (!result.ok || !result.order) {
+    return { success: false, error: result.error }
   }
-  if (order.cardActivated) {
-    return { success: false, error: 'Carte déjà activée par le client' }
-  }
-
-  if (order.cardNumber && order.cardToken) {
-    return { success: true, order }
-  }
-
-  const updated: CardOrder = {
-    ...order,
-    cardNumber: generateCardNumber(),
-    cardToken: generateCardToken(),
-    producedAt: new Date().toISOString(),
-    status: order.status === 'paid' ? 'processing' : order.status,
-  }
-
-  orders[index] = updated
-  saveCardOrders(orders)
-  void syncOrderToServer(updated, { admin: true })
-  return { success: true, order: updated }
+  updateLocalOrder(result.order)
+  return { success: true, order: normalizeOrder(result.order) }
 }
 
-export function markOrderShipped(
+export async function rejectOrder(
+  orderId: string,
+  reason: string
+): Promise<{ success: boolean; error?: string; order?: CardOrder }> {
+  const result = await adminOrderAction('reject', orderId, reason)
+  if (!result.ok || !result.order) {
+    return { success: false, error: result.error }
+  }
+  updateLocalOrder(result.order)
+  return { success: true, order: normalizeOrder(result.order) }
+}
+
+export async function produceCard(
   orderId: string
-): { success: boolean; error?: string; order?: CardOrder } {
-  const orders = loadCardOrders()
-  const index = orders.findIndex((o) => o.id === orderId)
-  if (index === -1) return { success: false, error: 'Commande introuvable' }
-
-  const order = orders[index]
-  if (!order.cardNumber || !order.cardToken) {
-    return { success: false, error: 'Produisez la carte avant l\'expédition' }
+): Promise<{ success: boolean; error?: string; order?: CardOrder }> {
+  const result = await adminOrderAction('produce', orderId)
+  if (!result.ok || !result.order) {
+    return { success: false, error: result.error }
   }
-  if (order.status !== 'processing' && order.status !== 'paid') {
-    return { success: false, error: 'Statut de commande invalide pour expédition' }
-  }
-  if (order.cardActivated) {
-    return { success: false, error: 'Carte déjà activée' }
-  }
-
-  const updated: CardOrder = { ...order, status: 'shipped' }
-  orders[index] = updated
-  saveCardOrders(orders)
-
-  syncUserCardStatus(order.userId, 'shipped', order.cardNumber)
-  void syncOrderToServer(updated, { admin: true })
-
-  return { success: true, order: updated }
+  updateLocalOrder(result.order)
+  return { success: true, order: normalizeOrder(result.order) }
 }
 
-export function activateCardWithCode(
-  userId: string,
+export async function markOrderShipped(
+  orderId: string
+): Promise<{ success: boolean; error?: string; order?: CardOrder }> {
+  const result = await adminOrderAction('ship', orderId)
+  if (!result.ok || !result.order) {
+    return { success: false, error: result.error }
+  }
+  updateLocalOrder(result.order)
+  return { success: true, order: normalizeOrder(result.order) }
+}
+
+function updateLocalOrder(order: CardOrder) {
+  const normalized = normalizeOrder(order)
+  const orders = loadCardOrders()
+  const index = orders.findIndex((o) => o.id === normalized.id)
+  if (index === -1) {
+    saveCardOrders([normalized, ...orders])
+    return
+  }
+  orders[index] = normalized
+  saveCardOrders(orders)
+}
+
+export async function activateCardWithCode(
+  _userId: string,
   code: string,
+  cardPin: string,
   cardToken?: string
-): { success: boolean; error?: string; cardNumber?: string } {
-  const order = getCardOrderByUserId(userId)
-  if (!order) return { success: false, error: 'Aucune commande de carte trouvée' }
-  if (order.cardActivated) {
-    return { success: false, error: 'Cette carte a déjà été activée' }
-  }
-  if (order.status !== 'shipped' && order.status !== 'delivered') {
-    return {
-      success: false,
-      error: 'Votre carte n\'est pas encore arrivée. Vous pourrez l\'activer après réception.',
-    }
-  }
-  if (!order.cardNumber || !order.cardToken) {
-    return {
-      success: false,
-      error: 'Carte non encore produite. Contactez le support.',
-    }
+): Promise<{ success: boolean; error?: string; cardNumber?: string }> {
+  const result = await activateCardOnServer({
+    activationCode: code,
+    cardPin,
+    cardToken,
+  })
+
+  if (!result.ok) {
+    return { success: false, error: result.error }
   }
 
-  if (cardToken?.trim()) {
-    if (order.cardToken.toUpperCase() !== cardToken.trim().toUpperCase()) {
-      return {
-        success: false,
-        error: 'Ce QR code ne correspond pas à votre commande.',
-      }
-    }
+  const order = await hydrateMyOrderFromServer(_userId)
+  if (order) {
+    updateLocalOrder({ ...order, cardActivated: true, status: 'activated' })
   }
 
-  if (!code.trim()) {
-    return { success: false, error: 'Veuillez saisir le code reçu par email' }
-  }
-  if (order.activationCode.toUpperCase() !== code.trim().toUpperCase()) {
-    return {
-      success: false,
-      error: 'Code incorrect. Vérifiez le code reçu par email lors de votre commande.',
-    }
-  }
-
-  const orders = loadCardOrders()
-  saveCardOrders(
-    orders.map((o) =>
-      o.id === order.id ? { ...o, cardActivated: true, status: 'delivered' as const } : o
-    )
-  )
-  syncUserCardStatus(userId, 'active', order.cardNumber)
-
-  return { success: true, cardNumber: order.cardNumber }
+  return { success: true, cardNumber: result.cardNumber }
 }
 
-/** Rétrocompatibilité démo — préférer le portail admin */
-export function simulateOrderReady(userId: string) {
-  const order = getCardOrderByUserId(userId)
-  if (!order) return
-
-  if (!order.cardNumber || !order.cardToken) {
-    produceCard(order.id)
-  }
-  markOrderShipped(order.id)
+/** @deprecated Désactivé en production — utiliser le portail admin */
+export function simulateOrderReady(_userId: string) {
+  console.warn('simulateOrderReady est désactivé — utilisez le portail admin')
 }

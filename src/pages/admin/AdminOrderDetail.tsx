@@ -6,15 +6,20 @@ import {
   Package,
   Printer,
   QrCode,
+  ShieldCheck,
+  ShieldX,
   Truck,
 } from 'lucide-react'
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
 import {
+  approveOrder,
   getCardOrderById,
   hydrateOrdersFromServer,
   markOrderShipped,
   produceCard,
+  rejectOrder,
 } from '../../store/orderStore'
+import { normalizeOrderStatus } from '../../services/orderServer'
 import { formatCurrency } from '../../utils/currency'
 import { getCardActivationUrl, maskCardNumber } from '../../utils/card'
 import { ADMIN_BASE_PATH } from '../../constants/brand'
@@ -26,6 +31,9 @@ export function AdminOrderDetail() {
   const [loading, setLoading] = useState(!order)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
+  const [showReject, setShowReject] = useState(false)
+  const [acting, setActing] = useState(false)
 
   useEffect(() => {
     if (!orderId) return
@@ -68,43 +76,36 @@ export function AdminOrderDetail() {
     )
   }
 
+  const status = normalizeOrderStatus(order.status)
+
   const reload = () => {
     const updated = getCardOrderById(orderId)
     if (updated) setOrder(updated)
   }
 
-  const handleProduce = () => {
+  const runAction = async (action: () => Promise<{ success: boolean; error?: string }>, successMsg: string) => {
     setError('')
     setMessage('')
-    const result = produceCard(orderId)
+    setActing(true)
+    const result = await action()
+    setActing(false)
     if (!result.success) {
-      setError(result.error ?? 'Échec production')
+      setError(result.error ?? 'Action échouée')
       return
     }
-    setMessage('Carte produite — numéro et QR générés. Vous pouvez imprimer.')
+    setMessage(successMsg)
     reload()
   }
 
-  const handleShip = () => {
-    setError('')
-    setMessage('')
-    const result = markOrderShipped(orderId)
-    if (!result.success) {
-      setError(result.error ?? 'Échec expédition')
-      return
-    }
-    setMessage('Commande marquée expédiée — le client peut activer sa carte.')
-    reload()
-  }
-
+  const canApprove = ['pending_review', 'paid'].includes(status) && !order.cardActivated
+  const canReject = canApprove
   const canProduce =
-    !order.cardActivated && !order.cardNumber && ['paid', 'processing'].includes(order.status)
+    !order.cardActivated && status === 'approved' && !order.cardNumber
   const canShip =
     !order.cardActivated &&
     order.cardNumber &&
     order.cardToken &&
-    order.status !== 'shipped' &&
-    order.status !== 'delivered'
+    status === 'processing'
   const canPrint = Boolean(order.cardNumber && order.cardToken)
 
   return (
@@ -122,9 +123,16 @@ export function AdminOrderDetail() {
         <h2 className="text-xl font-bold text-slate-900">{order.userName}</h2>
         <p className="mt-1 text-sm text-slate-500">
           Réf. {order.id.slice(0, 8).toUpperCase()} ·{' '}
-          {ORDER_STATUS_LABELS[order.status]}
+          {ORDER_STATUS_LABELS[status] ?? ORDER_STATUS_LABELS[order.status]}
         </p>
       </div>
+
+      {status === 'rejected' && order.rejectionReason && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p className="font-semibold">Commande refusée</p>
+          <p className="mt-1">{order.rejectionReason}</p>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
@@ -152,18 +160,12 @@ export function AdminOrderDetail() {
           <span className="text-slate-500">Paiement</span>
           <span>{order.paymentMethod}</span>
         </div>
-        <div className="mt-2 flex justify-between">
-          <span className="text-slate-500">Commande</span>
-          <span>
-            {new Date(order.createdAt).toLocaleString('fr-GN', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
-        </div>
+        {order.adminApprovedAt && (
+          <div className="mt-2 flex justify-between">
+            <span className="text-slate-500">Validée le</span>
+            <span>{new Date(order.adminApprovedAt).toLocaleString('fr-GN')}</span>
+          </div>
+        )}
       </div>
 
       {order.cardNumber && (
@@ -180,12 +182,6 @@ export function AdminOrderDetail() {
               </p>
               <p className="break-all text-xs opacity-80">{getCardActivationUrl(order.cardToken)}</p>
             </div>
-          )}
-          {order.producedAt && (
-            <p className="mt-2 text-xs text-violet-600">
-              Produite le{' '}
-              {new Date(order.producedAt).toLocaleString('fr-GN')}
-            </p>
           )}
         </div>
       )}
@@ -207,17 +203,77 @@ export function AdminOrderDetail() {
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Actions production
+          Validation & production
         </h3>
+
+        {canApprove && (
+          <button
+            type="button"
+            disabled={acting}
+            onClick={() => void runAction(() => approveOrder(orderId), 'Commande validée — vous pouvez produire la carte.')}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <ShieldCheck className="h-5 w-5" />
+            1. Valider la commande (paiement vérifié)
+          </button>
+        )}
+
+        {canReject && !showReject && (
+          <button
+            type="button"
+            disabled={acting}
+            onClick={() => setShowReject(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 py-3.5 font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+          >
+            <ShieldX className="h-5 w-5" />
+            Refuser la commande
+          </button>
+        )}
+
+        {showReject && (
+          <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-4">
+            <label className="block text-sm font-medium text-red-900">Motif du refus</label>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-red-200 px-3 py-2 text-sm"
+              placeholder="Ex. : paiement non reçu, informations incorrectes…"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={acting || !rejectReason.trim()}
+                onClick={() =>
+                  void runAction(
+                    () => rejectOrder(orderId, rejectReason.trim()),
+                    'Commande refusée — le client a été notifié.'
+                  ).then(() => setShowReject(false))
+                }
+                className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Confirmer le refus
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowReject(false)}
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
 
         {canProduce && (
           <button
             type="button"
-            onClick={handleProduce}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white hover:bg-violet-700"
+            disabled={acting}
+            onClick={() => void runAction(() => produceCard(orderId), 'Carte produite — numéro et QR générés.')}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3.5 font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
           >
             <Package className="h-5 w-5" />
-            {order.cardNumber ? 'Régénérer (déjà produite)' : '1. Produire la carte (numéro + QR)'}
+            2. Produire la carte (numéro + QR)
           </button>
         )}
 
@@ -227,28 +283,35 @@ export function AdminOrderDetail() {
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-3.5 font-semibold text-violet-700 hover:bg-violet-100"
           >
             <Printer className="h-5 w-5" />
-            2. Imprimer la carte
+            3. Imprimer la carte
           </Link>
         )}
 
         {canShip && (
           <button
             type="button"
-            onClick={handleShip}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-semibold text-white hover:bg-blue-700"
+            disabled={acting}
+            onClick={() =>
+              void runAction(
+                () => markOrderShipped(orderId),
+                'Commande expédiée — le client peut activer sa carte.'
+              )
+            }
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             <Truck className="h-5 w-5" />
-            3. Marquer expédiée / prête au retrait
+            4. Marquer expédiée / prête au retrait
           </button>
         )}
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-        <p className="font-semibold text-slate-700">Workflow</p>
+        <p className="font-semibold text-slate-700">Workflow sécurisé</p>
         <ol className="mt-2 list-inside list-decimal space-y-1">
-          <li>Produire → génère le numéro de carte et le QR lié au compte client</li>
-          <li>Imprimer → recto (carte) + verso (QR d&apos;activation)</li>
-          <li>Expédier → le client reçoit un email et peut activer via QR + code email</li>
+          <li>Valider → vérifie le paiement avant toute production</li>
+          <li>Produire → génère numéro de carte et QR</li>
+          <li>Imprimer → recto carte + verso QR</li>
+          <li>Expédier → le client peut activer via l&apos;API serveur</li>
         </ol>
       </div>
     </div>

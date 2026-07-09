@@ -78,6 +78,35 @@ Cordialement,
 L'équipe Guinée Multiservices`,
       }
 
+    case 'order_approved':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Commande validée — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Bonne nouvelle : votre commande de carte a été validée par notre équipe.
+Nous préparons votre carte. Vous serez notifié dès qu'elle sera prête.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
+    case 'order_rejected':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Commande refusée — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Votre commande de carte n'a pas pu être validée.
+
+Motif : ${sanitize(data.reason, 300)}
+
+Pour toute question : ${SUPPORT_EMAIL}
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
     case 'transaction_alert':
       return {
         to: sanitize(data.email, 80),
@@ -287,6 +316,8 @@ export const ALLOWED_EMAIL_TYPES = new Set([
   'merchant_withdrawal_requested',
   'merchant_withdrawal_processed',
   'admin_order_notification',
+  'order_approved',
+  'order_rejected',
   'admin_merchant_notification',
   'admin_withdrawal_notification',
 ])

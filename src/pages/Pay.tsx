@@ -51,13 +51,15 @@ export function Pay() {
     }
 
     requestPin((pin) => {
-      const ok = pay(category!, merchant, parsedAmount, pin)
-      if (ok) {
-        setStep('success')
-        setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
-      } else {
-        setError('Le paiement a échoué. Vérifiez votre PIN ou votre solde.')
-      }
+      void (async () => {
+        const ok = await pay(category!, merchant, parsedAmount, pin)
+        if (ok) {
+          setStep('success')
+          setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
+        } else {
+          setError('Le paiement a échoué. Vérifiez votre PIN ou votre solde.')
+        }
+      })()
     })
   }
 

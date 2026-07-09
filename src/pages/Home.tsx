@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Bus,
@@ -14,6 +15,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react'
 import { PlatformLogo } from '../components/PlatformLogo'
+import { LoginModal } from '../components/LoginModal'
 import {
   CLIENT_DASHBOARD_PATH,
   PLATFORM_NAME,
@@ -84,9 +86,18 @@ const TRUST_POINTS = [
 
 export function Home() {
   const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const [loginOpen, setLoginOpen] = useState(false)
+
+  const openLogin = () => setLoginOpen(true)
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={() => navigate(CLIENT_DASHBOARD_PATH)}
+      />
       {/* Navigation */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm safe-top">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
@@ -104,12 +115,15 @@ export function Home() {
             >
               Commerçant
             </Link>
-            <Link
-              to="/connexion"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-            >
-              Connexion
-            </Link>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                Connexion
+              </button>
+            )}
             <Link
               to={isAuthenticated ? CLIENT_DASHBOARD_PATH : '/commander-carte'}
               className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 sm:px-4"
@@ -144,12 +158,22 @@ export function Home() {
                 <CreditCard className="h-5 w-5" />
                 Commander ma carte — {formatCurrency(CARD_PRICE)}
               </Link>
-              <Link
-                to={isAuthenticated ? CLIENT_DASHBOARD_PATH : '/connexion'}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50"
-              >
-                {isAuthenticated ? 'Accéder à mon espace' : 'J’ai déjà un compte'}
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to={CLIENT_DASHBOARD_PATH}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  Accéder à mon espace
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openLogin}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  J’ai déjà un compte
+                </button>
+              )}
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2">
               {TRUST_POINTS.map((point) => (
@@ -349,9 +373,15 @@ export function Home() {
             © {new Date().getFullYear()} {PLATFORM_NAME}. {PLATFORM_TAGLINE}.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-slate-600">
-            <Link to="/connexion" className="hover:text-slate-900">
-              Connexion
-            </Link>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="hover:text-slate-900"
+              >
+                Connexion
+              </button>
+            )}
             <Link to="/commander-carte" className="hover:text-slate-900">
               Commander
             </Link>

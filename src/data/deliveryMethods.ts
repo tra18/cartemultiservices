@@ -48,9 +48,13 @@ export const DELIVERY_LABELS: Record<DeliveryMethod, string> = {
 }
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
-  paid: 'Payée — en attente de préparation',
+  pending_review: 'En attente de validation',
+  approved: 'Validée — en préparation',
+  rejected: 'Refusée',
+  paid: 'En attente de validation',
   processing: 'En préparation',
   shipped: 'Expédiée / prête au retrait',
-  delivered: 'Livrée',
+  activated: 'Carte activée',
+  delivered: 'Carte activée',
   cancelled: 'Annulée',
 }

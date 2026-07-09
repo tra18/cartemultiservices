@@ -3,7 +3,7 @@ import { Smartphone, Sparkles } from 'lucide-react'
 import { validateCardPin } from '../utils/cardPin'
 
 interface EnableDigitalCardProps {
-  onEnable: (pin: string) => string | null
+  onEnable: (pin: string) => Promise<string | null>
 }
 
 export function EnableDigitalCard({ onEnable }: EnableDigitalCardProps) {
@@ -12,7 +12,7 @@ export function EnableDigitalCard({ onEnable }: EnableDigitalCardProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -27,7 +27,7 @@ export function EnableDigitalCard({ onEnable }: EnableDigitalCardProps) {
     }
 
     setLoading(true)
-    const err = onEnable(pin)
+    const err = await onEnable(pin)
     setLoading(false)
     if (err) setError(err)
   }

@@ -13,14 +13,14 @@ interface CardContextValue {
   balance: number
   isDigital: boolean
   transactions: import('../types').Transaction[]
-  recharge: (amount: number, method: string, pin: string) => boolean
+  recharge: (amount: number, method: string, pin: string) => Promise<boolean>
   pay: (
     category: Category,
     merchant: string,
     amount: number,
     pin: string,
     detail?: string
-  ) => boolean
+  ) => Promise<boolean>
   formatCurrency: (amount: number) => string
 }
 

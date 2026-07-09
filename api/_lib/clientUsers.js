@@ -5,7 +5,7 @@ const EMAIL_INDEX = 'client-email:'
 
 export function stripUserForClient(user) {
   if (!user) return null
-  const { passwordHash, ...clientUser } = user
+  const { passwordHash, cardPinHash, cardPin, ...clientUser } = user
   return clientUser
 }
 
@@ -45,14 +45,14 @@ export async function saveUser(redis, user) {
   await redis.set(`${EMAIL_INDEX}${user.email.toLowerCase()}`, user.id)
 }
 
-const PATCHABLE_FIELDS = new Set([
-  'fullName',
-  'phone',
+const CLIENT_PATCHABLE_FIELDS = new Set(['fullName', 'phone'])
+
+const SERVER_PATCHABLE_FIELDS = new Set([
   'cardNumber',
   'balance',
   'transactions',
   'cardStatus',
-  'cardPin',
+  'cardPinHash',
   'pinFailedAttempts',
   'walletAppleAddedAt',
   'walletGoogleAddedAt',
@@ -60,9 +60,10 @@ const PATCHABLE_FIELDS = new Set([
   'digitalCardEnabledAt',
 ])
 
-export function mergeUserPatch(user, patch) {
+export function mergeUserPatch(user, patch, { server = false } = {}) {
+  const allowed = server ? SERVER_PATCHABLE_FIELDS : CLIENT_PATCHABLE_FIELDS
   const next = { ...user }
-  for (const key of PATCHABLE_FIELDS) {
+  for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(patch, key)) {
       next[key] = patch[key]
     }

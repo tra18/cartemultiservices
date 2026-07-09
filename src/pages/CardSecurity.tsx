@@ -17,9 +17,9 @@ export function CardSecurity() {
   const isBlocked = currentUser.cardStatus === 'blocked'
   const canManageSecurity = isCardUsable(currentUser) || isBlocked
 
-  const handleBlock = () => {
+  const handleBlock = async () => {
     setMessage('')
-    const err = blockCard()
+    const err = await blockCard()
     if (err) {
       setMessage(err)
       return
@@ -27,9 +27,9 @@ export function CardSecurity() {
     setMessage('Carte bloquée. Aucun paiement ne pourra être effectué.')
   }
 
-  const handleUnblock = (pin: string) => {
+  const handleUnblock = async (pin: string) => {
     setPinError('')
-    const err = unblockCard(pin)
+    const err = await unblockCard(pin)
     if (err) {
       setPinError(err)
       return

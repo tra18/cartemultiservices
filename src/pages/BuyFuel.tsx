@@ -55,14 +55,16 @@ export function BuyFuel() {
     }
 
     requestPin((pin) => {
-      const detail = `${parsedLiters} L · ${FUEL_TYPE_LABELS[fuelType]}`
-      const ok = pay('transport', station.name, total, pin, detail)
-      if (!ok) {
-        setError('Le paiement a échoué. Vérifiez votre PIN ou que votre carte est active.')
-        return
-      }
-      setSuccess(true)
-      setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
+      void (async () => {
+        const detail = `${parsedLiters} L · ${FUEL_TYPE_LABELS[fuelType]}`
+        const ok = await pay('transport', station.name, total, pin, detail)
+        if (!ok) {
+          setError('Le paiement a échoué. Vérifiez votre PIN ou que votre carte est active.')
+          return
+        }
+        setSuccess(true)
+        setTimeout(() => navigate(CLIENT_DASHBOARD_PATH), 2500)
+      })()
     })
   }
 

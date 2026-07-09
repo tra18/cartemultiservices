@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, CreditCard, KeyRound, Mail, QrCode } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getCardOrderByToken, getCardOrderByUserId } from '../store/orderStore'
+import { getCardOrderByToken, getCardOrderByUserId, hydrateMyOrderFromServer } from '../store/orderStore'
 import { isCardActive, resolveCardStatus } from '../utils/cardStatus'
+import { normalizeOrderStatus } from '../services/orderServer'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { maskCardNumber } from '../utils/card'
 import { pinsMatch } from '../utils/cardPin'
@@ -19,10 +20,12 @@ export function ActivateCard() {
   const [confirmPin, setConfirmPin] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    refreshCurrentUser()
-  }, [refreshCurrentUser])
+    void refreshCurrentUser()
+    if (currentUser) void hydrateMyOrderFromServer(currentUser.id)
+  }, [refreshCurrentUser, currentUser?.id])
 
   if (!currentUser) return null
 
@@ -49,7 +52,11 @@ export function ActivateCard() {
     )
   }
 
-  if (cardStatus !== 'shipped' && order?.status !== 'shipped' && order?.status !== 'delivered') {
+  if (
+    cardStatus !== 'shipped' &&
+    order?.status !== 'shipped' &&
+    normalizeOrderStatus(order?.status ?? '') !== 'activated'
+  ) {
     return (
       <div className="py-12 text-center">
         <CreditCard className="mx-auto h-12 w-12 text-slate-300" />
@@ -66,7 +73,7 @@ export function ActivateCard() {
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -86,7 +93,9 @@ export function ActivateCard() {
       return
     }
 
-    const err = activateCard(code, cardPin, cardTokenFromQr || undefined)
+    setSubmitting(true)
+    const err = await activateCard(code, cardPin, cardTokenFromQr || undefined)
+    setSubmitting(false)
     if (err) {
       setError(err)
       return
@@ -213,10 +222,10 @@ export function ActivateCard() {
 
         <button
           type="submit"
-          disabled={code.length < 6 || cardPin.length !== 4 || confirmPin.length !== 4}
+          disabled={submitting || code.length < 6 || cardPin.length !== 4 || confirmPin.length !== 4}
           className="w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Activer ma carte
+          {submitting ? 'Activation…' : 'Activer ma carte'}
         </button>
       </form>
     </div>

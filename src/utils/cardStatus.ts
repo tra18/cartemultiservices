@@ -1,4 +1,5 @@
 import { getCardOrderByUserId } from '../store/orderStore'
+import { isOrderActivated, normalizeOrderStatus } from '../services/orderServer'
 import type { CardStatus } from '../types/order'
 import type { UserAccount } from '../types/auth'
 
@@ -12,14 +13,20 @@ export function resolveCardStatus(
 
   const order = getCardOrderByUserId(user.id)
 
-  if (user.cardStatus === 'active' || order?.cardActivated) {
+  if (user.cardStatus === 'active' || isOrderActivated(order)) {
     return 'active'
   }
-  if (order?.status === 'shipped' || order?.status === 'delivered') {
+  if (order && normalizeOrderStatus(order.status) === 'shipped') {
     return 'shipped'
   }
-  if (order?.status === 'processing' || order?.status === 'paid') {
+  if (
+    order &&
+    ['pending_review', 'paid', 'approved', 'processing'].includes(normalizeOrderStatus(order.status))
+  ) {
     return 'ordered'
+  }
+  if (order && normalizeOrderStatus(order.status) === 'rejected') {
+    return 'none'
   }
 
   return user.cardStatus
@@ -64,9 +71,10 @@ export function canEnableDigitalCard(
   if (isPhysicalCardActive(user)) return false
 
   const order = getCardOrderByUserId(user.id)
-  if (!order || order.cardActivated) return false
+  if (!order || isOrderActivated(order)) return false
 
-  return ['paid', 'processing', 'shipped', 'delivered'].includes(order.status)
+  const status = normalizeOrderStatus(order.status)
+  return ['approved', 'processing', 'shipped'].includes(status)
 }
 
 export function getEffectiveCardNumber(

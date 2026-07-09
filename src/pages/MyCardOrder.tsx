@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { Mail, Package, QrCode, Truck } from 'lucide-react'
 import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../data/deliveryMethods'
 import { useAuth } from '../context/AuthContext'
-import { getCardOrderByUserId } from '../store/orderStore'
+import { getCardOrderByUserId, hydrateMyOrderFromServer } from '../store/orderStore'
+import { normalizeOrderStatus } from '../services/orderServer'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import { formatCurrency } from '../utils/currency'
 import { maskCardNumber } from '../utils/card'
@@ -13,8 +14,9 @@ export function MyCardOrder() {
   const { currentUser, refreshCurrentUser } = useAuth()
 
   useEffect(() => {
-    refreshCurrentUser()
-  }, [refreshCurrentUser])
+    void refreshCurrentUser()
+    if (currentUser) void hydrateMyOrderFromServer(currentUser.id)
+  }, [refreshCurrentUser, currentUser?.id])
 
   if (!currentUser) return null
 
@@ -46,7 +48,7 @@ export function MyCardOrder() {
     )
   }
 
-  const statusLabel = ORDER_STATUS_LABELS[order.status] ?? order.status
+  const statusLabel = ORDER_STATUS_LABELS[normalizeOrderStatus(order.status)] ?? order.status
   const cardStatus = resolveCardStatus(currentUser)
 
   return (

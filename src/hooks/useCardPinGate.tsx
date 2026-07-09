@@ -15,8 +15,8 @@ export function useCardPinGate() {
   }, [])
 
   const handlePinSubmit = useCallback(
-    (pin: string) => {
-      const err = verifyCardPin(pin)
+    async (pin: string) => {
+      const err = await verifyCardPin(pin)
       if (err) {
         setPinError(err)
         return

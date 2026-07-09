@@ -2,7 +2,7 @@ import type { RegisterData, UserAccount } from '../types/auth'
 
 export const CLIENT_TOKEN_KEY = 'carte-multiservice-client-token'
 
-function getClientAuthHeaders(): Record<string, string> {
+export function getClientAuthHeaders(): Record<string, string> {
   const token = sessionStorage.getItem(CLIENT_TOKEN_KEY)
   if (!token) return {}
   return { Authorization: `Bearer ${token}` }

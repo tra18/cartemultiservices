@@ -5,9 +5,13 @@ export type DeliveryMethod =
   | 'agency_matam'
 
 export type CardOrderStatus =
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
   | 'paid'
   | 'processing'
   | 'shipped'
+  | 'activated'
   | 'delivered'
   | 'cancelled'
 
@@ -25,10 +29,16 @@ export interface CardOrder {
   amount: number
   paymentMethod: string
   status: CardOrderStatus
-  activationCode: string
+  /** @deprecated Jamais renvoyé par le serveur — code envoyé par email uniquement */
+  activationCode?: string
   activationEmailSentAt: string
   cardActivated: boolean
   createdAt: string
+  adminApprovedAt?: string
+  approvedBy?: string
+  rejectedAt?: string
+  rejectionReason?: string
+  activatedAt?: string
   /** Numéro imprimé sur la carte physique */
   cardNumber?: string
   /** Token unique encodé dans le QR de la carte */

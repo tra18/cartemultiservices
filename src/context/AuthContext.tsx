@@ -1,4 +1,3 @@
-import { flushSync } from 'react-dom'
 import {
   createContext,
   useCallback,
@@ -14,19 +13,13 @@ import { completeQrPayment } from '../store/platformStore'
 import {
   activateCardWithCode,
   createCardOrder,
-  simulateOrderReady,
 } from '../store/orderStore'
+import { cardSecurityAction, enableDigitalCardOnServer, verifyCardPinOnServer } from '../services/orderServer'
 import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
-import { generateCardNumber } from '../utils/card'
 import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
 import { validateCardPin } from '../utils/cardPin'
-import {
-  sendCardBlockedEmail,
-  sendCardActivatedEmail,
-  sendDigitalCardEmail,
-  sendTransactionAlertEmail,
-} from '../services/emailService'
+import { sendCardBlockedEmail, sendTransactionAlertEmail } from '../services/emailService'
 import {
   checkEmailAvailable,
   fetchClientSession,
@@ -47,16 +40,6 @@ function toProfilePatch(user: UserAccount): Partial<UserAccount> {
   return {
     fullName: user.fullName,
     phone: user.phone,
-    cardNumber: user.cardNumber,
-    balance: user.balance,
-    transactions: user.transactions,
-    cardStatus: user.cardStatus,
-    cardPin: user.cardPin,
-    pinFailedAttempts: user.pinFailedAttempts,
-    walletAppleAddedAt: user.walletAppleAddedAt,
-    walletGoogleAddedAt: user.walletGoogleAddedAt,
-    digitalCardNumber: user.digitalCardNumber,
-    digitalCardEnabledAt: user.digitalCardEnabledAt,
   }
 }
 
@@ -75,18 +58,18 @@ interface AuthContextValue {
     amount: number,
     pin: string,
     detail?: string
-  ) => boolean
+  ) => Promise<boolean>
   payViaQr: (paymentId: string, pin: string) => Promise<{ success: boolean; error?: string }>
-  recharge: (amount: number, method: string, pin: string) => boolean
+  recharge: (amount: number, method: string, pin: string) => Promise<boolean>
   orderCard: (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string }
   ) => Promise<{ success: boolean; error?: string; order?: CardOrder }>
-  activateCard: (code: string, cardPin: string, cardToken?: string) => string | null
-  verifyCardPin: (pin: string) => string | null
-  blockCard: () => string | null
-  unblockCard: (pin: string) => string | null
+  activateCard: (code: string, cardPin: string, cardToken?: string) => Promise<string | null>
+  verifyCardPin: (pin: string) => Promise<string | null>
+  blockCard: () => Promise<string | null>
+  unblockCard: (pin: string) => Promise<string | null>
   addToMobileWallet: (wallet: 'apple' | 'google') => string | null
-  enableDigitalCard: (pin: string) => string | null
+  enableDigitalCard: (pin: string) => Promise<string | null>
   markCardShipped: () => void
   refreshCurrentUser: () => Promise<void>
 }
@@ -96,6 +79,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [sessionCardPin, setSessionCardPin] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -142,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await logoutClient()
+    setSessionCardPin(null)
     setCurrentUser(null)
   }
 
@@ -156,63 +141,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  const MAX_PIN_ATTEMPTS = 3
+  const refreshCurrentUser = useCallback(async () => {
+    const user = await fetchClientSession()
+    setCurrentUser(user ? normalizeUser(user) : null)
+  }, [])
 
-  const verifyCardPin = (pin: string): string | null => {
+  const verifyCardPin = async (pin: string): Promise<string | null> => {
     if (!currentUser) return 'Non connecté'
-    if (!currentUser.cardPin) {
-      return 'Code PIN non configuré. Activez votre carte numérique ou physique.'
-    }
-    if (currentUser.cardStatus === 'blocked' && currentUser.pinFailedAttempts! >= MAX_PIN_ATTEMPTS) {
-      return 'Carte bloquée après trop de tentatives. Débloquez dans Sécurité carte.'
+    if (currentUser.cardStatus === 'blocked') {
+      return 'Carte bloquée. Débloquez-la dans Sécurité carte.'
     }
 
-    if (currentUser.cardPin !== pin) {
-      const attempts = (currentUser.pinFailedAttempts ?? 0) + 1
-      updateUser(currentUser.id, (user) => ({
-        ...user,
-        pinFailedAttempts: attempts,
-        ...(attempts >= MAX_PIN_ATTEMPTS ? { cardStatus: 'blocked' as const } : {}),
-      }))
-      if (attempts >= MAX_PIN_ATTEMPTS) {
-        sendCardBlockedEmail(currentUser.email, currentUser.fullName)
-        return 'Trop de tentatives incorrectes. Carte bloquée par sécurité.'
-      }
-      return `Code PIN incorrect (${MAX_PIN_ATTEMPTS - attempts} essai(s) restant(s))`
+    if (sessionCardPin === pin) return null
+
+    if (currentUser.cardPin && currentUser.cardPin === pin) {
+      setSessionCardPin(pin)
+      return null
     }
 
-    if (currentUser.pinFailedAttempts) {
-      updateUser(currentUser.id, (user) => ({ ...user, pinFailedAttempts: 0 }))
+    const result = await verifyCardPinOnServer(pin)
+    if (result.ok) {
+      setSessionCardPin(pin)
+      await refreshCurrentUser()
+      return null
     }
-    return null
+
+    await refreshCurrentUser()
+    if (result.blocked) {
+      sendCardBlockedEmail(currentUser.email, currentUser.fullName)
+    }
+    return result.error ?? 'Code PIN incorrect'
   }
 
-  const blockCard = (): string | null => {
+  const blockCard = async (): Promise<string | null> => {
     if (!currentUser) return 'Non connecté'
     if (currentUser.cardStatus === 'blocked') return 'Carte déjà bloquée'
     if (!isCardUsable(currentUser)) return 'Carte non active'
 
-    updateUser(currentUser.id, (user) => ({
-      ...user,
-      cardStatus: 'blocked',
-    }))
-    sendCardBlockedEmail(currentUser.email, currentUser.fullName)
+    const result = await cardSecurityAction('block')
+    if (!result.ok) return result.error ?? 'Échec du blocage'
+    await refreshCurrentUser()
     return null
   }
 
-  const unblockCard = (pin: string): string | null => {
+  const unblockCard = async (pin: string): Promise<string | null> => {
     if (!currentUser) return 'Non connecté'
     if (currentUser.cardStatus !== 'blocked') return 'La carte n\'est pas bloquée'
 
-    if (currentUser.cardPin !== pin) {
-      return 'Code PIN incorrect'
-    }
-
-    updateUser(currentUser.id, (user) => ({
-      ...user,
-      cardStatus: 'active',
-      pinFailedAttempts: 0,
-    }))
+    const result = await cardSecurityAction('unblock', pin)
+    if (!result.ok) return result.error ?? 'Déblocage échoué'
+    setSessionCardPin(pin)
+    await refreshCurrentUser()
     return null
   }
 
@@ -240,53 +219,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  const enableDigitalCard = (pin: string): string | null => {
+  const enableDigitalCard = async (pin: string): Promise<string | null> => {
     if (!currentUser) return 'Non connecté'
     const pinErr = validateCardPin(pin)
     if (pinErr) return pinErr
 
     if (!canEnableDigitalCard(currentUser)) {
-      return 'Carte numérique non disponible pour votre compte'
+      return 'Carte numérique disponible après validation de votre commande par notre équipe.'
     }
 
-    const digitalNumber = generateCardNumber()
-    const now = new Date().toISOString()
+    const result = await enableDigitalCardOnServer(pin)
+    if (!result.ok) return result.error ?? 'Activation carte numérique échouée'
 
-    updateUser(currentUser.id, (user) => ({
-      ...user,
-      digitalCardNumber: digitalNumber,
-      digitalCardEnabledAt: now,
-      cardPin: pin,
-      pinFailedAttempts: 0,
-    }))
-    sendDigitalCardEmail(currentUser.email, currentUser.fullName, digitalNumber)
+    setSessionCardPin(pin)
+    await refreshCurrentUser()
     return null
   }
 
-  const activateCard = (code: string, cardPin: string, cardToken?: string): string | null => {
+  const activateCard = async (
+    code: string,
+    cardPin: string,
+    cardToken?: string
+  ): Promise<string | null> => {
     if (!currentUser) return 'Non connecté'
     const pinErr = validateCardPin(cardPin)
     if (pinErr) return pinErr
 
-    const userId = currentUser.id
-    const result = activateCardWithCode(userId, code, cardToken)
+    const result = await activateCardWithCode(currentUser.id, code, cardPin, cardToken)
     if (!result.success) return result.error ?? 'Activation échouée'
 
-    flushSync(() => {
-      setCurrentUser((prev) => {
-        if (!prev || prev.id !== userId) return prev
-        const updated = normalizeUser({
-          ...prev,
-          cardStatus: 'active',
-          cardNumber: result.cardNumber ?? prev.cardNumber,
-          cardPin,
-          pinFailedAttempts: 0,
-        })
-        void patchClientProfile(toProfilePatch(updated))
-        return updated
-      })
-    })
-    sendCardActivatedEmail(currentUser.email, currentUser.fullName, result.cardNumber ?? currentUser.cardNumber)
+    setSessionCardPin(cardPin)
+    await refreshCurrentUser()
     return null
   }
 
@@ -322,30 +285,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: registration.error ?? 'Création de compte échouée' }
     }
 
-    const order = createCardOrder(registration.user.id, safeData)
+    const order = await createCardOrder(registration.user.id, safeData)
     setCurrentUser(normalizeUser(registration.user))
     resetRateLimit()
     return { success: true, order }
   }
 
-  const refreshCurrentUser = useCallback(async () => {
-    const user = await fetchClientSession()
-    setCurrentUser(user ? normalizeUser(user) : null)
-  }, [])
-
   const markCardShipped = () => {
-    if (!currentUser) return
-    simulateOrderReady(currentUser.id)
-    updateUser(currentUser.id, (user) => ({
-      ...user,
-      cardStatus: 'shipped',
-    }))
+    console.warn('markCardShipped désactivé — utilisez le portail admin')
   }
 
-  const recharge = (amount: number, method: string, pin: string): boolean => {
+  const recharge = async (amount: number, method: string, pin: string): Promise<boolean> => {
     const cardErr = requireUsableCard()
     if (cardErr) return false
-    const pinErr = verifyCardPin(pin)
+    const pinErr = await verifyCardPin(pin)
     if (pinErr) return false
     if (!currentUser || amount <= 0 || amount > 5_000_000) return false
 
@@ -374,16 +327,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true
   }
 
-  const pay = (
+  const pay = async (
     category: Category,
     merchant: string,
     amount: number,
     pin: string,
     detail?: string
-  ): boolean => {
+  ): Promise<boolean> => {
     const cardErr = requireUsableCard()
     if (cardErr) return false
-    const pinErr = verifyCardPin(pin)
+    const pinErr = await verifyCardPin(pin)
     if (pinErr) return false
     if (!currentUser || amount <= 0 || amount > currentUser.balance) return false
 
@@ -431,7 +384,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return { success: false, error: 'Non connecté' }
     const cardErr = requireUsableCard()
     if (cardErr) return { success: false, error: cardErr }
-    const pinErr = verifyCardPin(pin)
+    const pinErr = await verifyCardPin(pin)
     if (pinErr) return { success: false, error: pinErr }
 
     const result = await completeQrPayment(paymentId, currentUser)
