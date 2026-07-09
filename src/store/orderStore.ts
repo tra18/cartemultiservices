@@ -8,7 +8,6 @@ import {
   fetchMyOrder,
   fetchServerOrders,
   isOrderActivated,
-  mergeOrders,
   normalizeOrderStatus,
   syncOrderToServer,
 } from '../services/orderServer'
@@ -50,9 +49,21 @@ export function saveCardOrders(orders: CardOrder[]) {
 export async function hydrateOrdersFromServer() {
   try {
     const result = await fetchServerOrders()
-    const merged = mergeOrders(loadCardOrders(), result.orders)
-    saveCardOrders(merged)
-    return { orders: merged, error: result.error, unreadAlerts: result.unreadAlerts, recentAlerts: result.recentAlerts }
+    if (!result.error) {
+      saveCardOrders(result.orders)
+      return {
+        orders: result.orders,
+        error: undefined,
+        unreadAlerts: result.unreadAlerts,
+        recentAlerts: result.recentAlerts,
+      }
+    }
+    return {
+      orders: loadCardOrders(),
+      error: result.error,
+      unreadAlerts: result.unreadAlerts,
+      recentAlerts: result.recentAlerts,
+    }
   } catch {
     return { orders: loadCardOrders(), error: 'Erreur réseau lors du chargement des commandes.' }
   }

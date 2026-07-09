@@ -263,6 +263,22 @@ export default async function handler(req, res) {
       const isNewOrder = index === -1
 
       if (isNewOrder) {
+        if (adminSession) {
+          const prepared = prepareNewOrder(
+            { ...body, amount: CARD_PRICE, orderType: body.orderType ?? 'initial' },
+            body.activationCode
+          )
+          const activationCode = prepared._plainActivationCode
+          delete prepared._plainActivationCode
+
+          const { isNew } = await upsertOrder(redis, prepared)
+          if (isNew && !body.activationCode) {
+            await sendNewOrderEmails(redis, prepared, activationCode)
+          }
+
+          return res.status(200).json({ ok: true, order: stripOrderForAdmin(prepared) })
+        }
+
         if (!clientSession) {
           return res.status(401).json({ error: 'Session client requise pour créer une commande' })
         }

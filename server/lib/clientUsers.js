@@ -21,14 +21,28 @@ export function stripUserForAdmin(user) {
 }
 
 async function rebuildUsersIndex(redis) {
-  for await (const key of redis.scanIterator({ match: `${USER_PREFIX}*`, count: 50 })) {
-    const userId = String(key).slice(USER_PREFIX.length)
-    if (userId) await redis.sadd(USERS_INDEX_KEY, userId)
-  }
+  let cursor = 0
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, {
+      match: `${USER_PREFIX}*`,
+      count: 100,
+    })
+    cursor = Number(nextCursor)
+    for (const key of keys) {
+      const userId = String(key).slice(USER_PREFIX.length)
+      if (userId) await redis.sadd(USERS_INDEX_KEY, userId)
+    }
+  } while (cursor !== 0)
 }
 
 export async function listAllUsers(redis) {
-  const indexSize = await redis.scard(USERS_INDEX_KEY)
+  let indexSize = 0
+  try {
+    indexSize = await redis.scard(USERS_INDEX_KEY)
+  } catch {
+    await redis.del(USERS_INDEX_KEY)
+  }
+
   if (!indexSize) {
     await rebuildUsersIndex(redis)
   }
@@ -40,7 +54,7 @@ export async function listAllUsers(redis) {
   return users
     .filter(Boolean)
     .map(stripUserForAdmin)
-    .sort((a, b) => a.fullName.localeCompare(b.fullName, 'fr'))
+    .sort((a, b) => (a.fullName || a.email || '').localeCompare(b.fullName || b.email || '', 'fr'))
 }
 
 export async function getUserById(redis, userId) {

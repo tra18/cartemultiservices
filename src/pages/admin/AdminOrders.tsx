@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertCircle, Bell, Package, Search } from 'lucide-react'
 import { ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
-import { hydrateOrdersFromServer, loadCardOrders } from '../../store/orderStore'
+import { hydrateOrdersFromServer } from '../../store/orderStore'
 import { normalizeOrderStatus } from '../../services/orderServer'
-import type { CardOrderStatus } from '../../types/order'
+import type { CardOrder, CardOrderStatus } from '../../types/order'
 import { formatCurrency } from '../../utils/currency'
 import { maskCardNumber } from '../../utils/card'
 import { ADMIN_BASE_PATH } from '../../constants/brand'
@@ -22,7 +22,7 @@ const STATUS_FILTERS: { value: 'all' | CardOrderStatus; label: string }[] = [
 export function AdminOrders() {
   const [filter, setFilter] = useState<'all' | CardOrderStatus>('all')
   const [search, setSearch] = useState('')
-  const [orders, setOrders] = useState(() => loadCardOrders())
+  const [orders, setOrders] = useState<CardOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [recentAlerts, setRecentAlerts] = useState<
