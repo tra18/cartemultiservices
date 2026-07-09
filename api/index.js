@@ -1,10 +1,10 @@
-import sendEmail from './_lib/routes/send-email.js'
-import orders from './_lib/routes/orders.js'
-import adminAuth from './_lib/routes/admin-auth.js'
-import wallet from './_lib/routes/wallet.js'
-import clientAuth from './_lib/routes/client-auth.js'
-import finance from './_lib/routes/finance.js'
-import card from './_lib/routes/card.js'
+import sendEmail from '../server/routes/send-email.js'
+import orders from '../server/routes/orders.js'
+import adminAuth from '../server/routes/admin-auth.js'
+import wallet from '../server/routes/wallet.js'
+import clientAuth from '../server/routes/client-auth.js'
+import finance from '../server/routes/finance.js'
+import card from '../server/routes/card.js'
 
 function getPathname(req) {
   const raw = req.url ?? ''

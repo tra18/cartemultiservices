@@ -1,4 +1,4 @@
-import { getRedis, parseBody, rateLimit, verifyAdminSession, getClientIp } from "./_lib/security.js"
+import { getRedis, parseBody, rateLimit, verifyAdminSession, getClientIp } from "../lib/security.js"
 import {
   addTreasuryEntry,
   getFinanceSnapshot,
@@ -7,7 +7,7 @@ import {
   requestAdminWithdrawalInFinance,
   requestMerchantWithdrawalInFinance,
   upsertFinanceMerchant,
-} from "./_lib/financeStore.js"
+} from "../lib/financeStore.js"
 
 export default async function handler(req, res) {
   const redis = getRedis()

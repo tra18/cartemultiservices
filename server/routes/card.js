@@ -1,9 +1,9 @@
-import { sendTypedEmail } from '../mailer.js'
-import { activateOrderCard, canEnableDigitalCard, getOrderByUserId } from '../ordersStore.js'
-import { verifyClientSession } from '../clientSessions.js'
-import { getUserById, saveUser } from '../clientUsers.js'
-import { hashPassword, verifyPassword } from '../password.js'
-import { getClientIp, getRedis, parseBody, rateLimit } from '../security.js'
+import { sendTypedEmail } from '../lib/mailer.js'
+import { activateOrderCard, canEnableDigitalCard, getOrderByUserId } from '../lib/ordersStore.js'
+import { verifyClientSession } from '../lib/clientSessions.js'
+import { getUserById, saveUser } from '../lib/clientUsers.js'
+import { hashPassword, verifyPassword } from '../lib/password.js'
+import { getClientIp, getRedis, parseBody, rateLimit } from '../lib/security.js'
 
 const MAX_PIN_ATTEMPTS = 3
 

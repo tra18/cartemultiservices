@@ -1,11 +1,11 @@
-import { sendTypedEmail } from './_lib/mailer.js'
-import { ALLOWED_EMAIL_TYPES } from './_lib/emailTemplates.js'
+import { sendTypedEmail } from '../lib/mailer.js'
+import { ALLOWED_EMAIL_TYPES } from '../lib/emailTemplates.js'
 import {
   getClientIp,
   getRedis,
   parseBody,
   rateLimit,
-} from './_lib/security.js'
+} from '../lib/security.js'
 
 const SERVER_ONLY_TYPES = new Set([
   'activation_code',

@@ -1,15 +1,15 @@
-import { diagnoseAppleWalletConfig, getAppleWalletErrorMessage } from './_lib/applePassDiagnostics.js'
-import { createAppleWalletPass } from './_lib/applePass.js'
-import { createGoogleWalletSaveUrl } from './_lib/googleWallet.js'
-import { sendTypedEmail } from './_lib/mailer.js'
+import { diagnoseAppleWalletConfig, getAppleWalletErrorMessage } from '../lib/applePassDiagnostics.js'
+import { createAppleWalletPass } from '../lib/applePass.js'
+import { createGoogleWalletSaveUrl } from '../lib/googleWallet.js'
+import { sendTypedEmail } from '../lib/mailer.js'
 import {
   enforceWalletRateLimit,
   isAppleWalletConfigured,
   isGoogleWalletConfigured,
   markWalletAdded,
   parseWalletRequest,
-} from './_lib/walletCommon.js'
-import { getRedis } from './_lib/security.js'
+} from '../lib/walletCommon.js'
+import { getRedis } from '../lib/security.js'
 
 function getPathname(req) {
   const raw = req.url ?? ''

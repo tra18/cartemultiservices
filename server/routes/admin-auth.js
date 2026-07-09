@@ -6,7 +6,7 @@ import {
   parseBody,
   rateLimit,
   verifyAdminSession,
-} from '../security.js'
+} from '../lib/security.js'
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? 'admin@mscarte.com').toLowerCase()
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? ''

@@ -1,4 +1,4 @@
-import { sendTypedEmail } from './_lib/mailer.js'
+import { sendTypedEmail } from '../lib/mailer.js'
 import {
   approveOrder,
   getOrderByUserId,
@@ -11,15 +11,15 @@ import {
   stripOrderForAdmin,
   stripOrderForClient,
   upsertOrder,
-} from './_lib/ordersStore.js'
-import { verifyClientSession } from './_lib/clientSessions.js'
+} from '../lib/ordersStore.js'
+import { verifyClientSession } from '../lib/clientSessions.js'
 import {
   getClientIp,
   getRedis,
   parseBody,
   rateLimit,
   verifyAdminSession,
-} from './_lib/security.js'
+} from '../lib/security.js'
 
 function getPathname(req) {
   const raw = req.url ?? ''

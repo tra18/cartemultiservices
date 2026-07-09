@@ -1,4 +1,4 @@
-import { sendTypedEmail } from '../mailer.js'
+import { sendTypedEmail } from '../lib/mailer.js'
 import {
   createUserRecord,
   getUserByEmail,
@@ -6,9 +6,9 @@ import {
   mergeUserPatch,
   saveUser,
   stripUserForClient,
-} from '../clientUsers.js'
-import { createClientSession, destroyClientSession, verifyClientSession } from '../clientSessions.js'
-import { hashPassword, verifyPassword } from '../password.js'
+} from '../lib/clientUsers.js'
+import { createClientSession, destroyClientSession, verifyClientSession } from '../lib/clientSessions.js'
+import { hashPassword, verifyPassword } from '../lib/password.js'
 import {
   getClientIp,
   getRedis,
@@ -16,7 +16,7 @@ import {
   parseBody,
   rateLimit,
   sanitizeText,
-} from '../security.js'
+} from '../lib/security.js'
 
 function getUserAgent(req) {
   const ua = req.headers['user-agent']
