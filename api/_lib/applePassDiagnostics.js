@@ -154,11 +154,10 @@ export function diagnoseAppleWalletConfig() {
         teamIdentifier: process.env.APPLE_TEAM_ID,
         organizationName: 'Guinée Multiservices',
         description: 'Diagnostic',
-        generic: {
-          primaryFields: [{ key: 'test', label: 'TEST', value: 'OK' }],
-        },
       }
     )
+    pass.type = 'generic'
+    pass.primaryFields.push({ key: 'test', label: 'TEST', value: 'OK' })
     const buffer = pass.getAsBuffer()
     report.steps.push({
       step: 'pass',

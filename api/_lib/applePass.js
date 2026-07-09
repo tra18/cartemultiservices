@@ -114,52 +114,46 @@ export async function createAppleWalletPass({ userId, fullName, cardNumber, emai
       foregroundColor: 'rgb(255, 255, 255)',
       backgroundColor: 'rgb(15, 23, 42)',
       labelColor: 'rgb(148, 163, 184)',
-      generic: {
-        primaryFields: [
-          {
-            key: 'holder',
-            label: 'TITULAIRE',
-            value: fullName,
-          },
-        ],
-        secondaryFields: [
-          {
-            key: 'card',
-            label: 'CARTE',
-            value: masked,
-          },
-        ],
-        auxiliaryFields: [
-          {
-            key: 'service',
-            label: 'SERVICE',
-            value: 'Carte multiservice',
-          },
-        ],
-        backFields: [
-          {
-            key: 'email',
-            label: 'Email',
-            value: email,
-          },
-          {
-            key: 'site',
-            label: 'Site web',
-            value: getSiteUrl(),
-          },
-          {
-            key: 'help',
-            label: 'Support',
-            value: 'support@mscarte.com',
-          },
-          {
-            key: 'info',
-            label: 'Information',
-            value:
-              'Présentez le QR code chez les commerçants partenaires ou ouvrez votre espace client pour payer.',
-          },
-        ],
-      },
+    }
+  )
+
+  pass.type = 'generic'
+  pass.primaryFields.push({
+    key: 'holder',
+    label: 'TITULAIRE',
+    value: fullName,
+  })
+  pass.secondaryFields.push({
+    key: 'card',
+    label: 'CARTE',
+    value: masked,
+  })
+  pass.auxiliaryFields.push({
+    key: 'service',
+    label: 'SERVICE',
+    value: 'Carte multiservice',
+  })
+  pass.backFields.push(
+    {
+      key: 'email',
+      label: 'Email',
+      value: email,
+    },
+    {
+      key: 'site',
+      label: 'Site web',
+      value: getSiteUrl(),
+    },
+    {
+      key: 'help',
+      label: 'Support',
+      value: 'support@mscarte.com',
+    },
+    {
+      key: 'info',
+      label: 'Information',
+      value:
+        'Présentez le QR code chez les commerçants partenaires ou ouvrez votre espace client pour payer.',
     }
   )
 
