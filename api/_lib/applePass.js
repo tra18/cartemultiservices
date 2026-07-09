@@ -3,36 +3,70 @@ import { PKPass } from 'passkit-generator'
 import { getPassIconBuffers } from './walletAssets.js'
 import { buildCardQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
 
-function decodeBase64(value) {
-  return Buffer.from(value, 'base64')
+function decodeBase64Env(value) {
+  const cleaned = String(value ?? '').replace(/\s+/g, '')
+  if (!cleaned) return Buffer.alloc(0)
+  return Buffer.from(cleaned, 'base64')
+}
+
+function toPemCertificate(buffer) {
+  const text = buffer.toString('utf-8')
+  if (text.includes('BEGIN CERTIFICATE')) {
+    return Buffer.from(text)
+  }
+
+  const der = forge.util.createBuffer(buffer.toString('binary'))
+  const cert = forge.pki.certificateFromAsn1(forge.asn1.fromDer(der))
+  return Buffer.from(forge.pki.certificateToPem(cert))
+}
+
+function toPemPrivateKey(buffer) {
+  const text = buffer.toString('utf-8')
+  if (text.includes('BEGIN') && text.includes('PRIVATE KEY')) {
+    return Buffer.from(text)
+  }
+
+  const der = forge.util.createBuffer(buffer.toString('binary'))
+  const privateKey = forge.pki.privateKeyFromAsn1(forge.asn1.fromDer(der))
+  return Buffer.from(forge.pki.privateKeyToPem(privateKey))
+}
+
+function extractPrivateKeyFromP12(p12) {
+  const shrouded = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })
+  const plain = p12.getBags({ bagType: forge.pki.oids.keyBag })
+
+  return (
+    shrouded[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key ??
+    plain[forge.pki.oids.keyBag]?.[0]?.key ??
+    null
+  )
 }
 
 function loadAppleCertificates() {
-  const wwdr = decodeBase64(process.env.APPLE_WWDR_CERT_BASE64 ?? '')
+  const wwdr = toPemCertificate(decodeBase64Env(process.env.APPLE_WWDR_CERT_BASE64))
   const passphrase = process.env.APPLE_PASS_CERT_PASSWORD ?? ''
 
   if (process.env.APPLE_PASS_SIGNER_CERT_BASE64 && process.env.APPLE_PASS_SIGNER_KEY_BASE64) {
     return {
       wwdr,
-      signerCert: decodeBase64(process.env.APPLE_PASS_SIGNER_CERT_BASE64),
-      signerKey: decodeBase64(process.env.APPLE_PASS_SIGNER_KEY_BASE64),
+      signerCert: toPemCertificate(decodeBase64Env(process.env.APPLE_PASS_SIGNER_CERT_BASE64)),
+      signerKey: toPemPrivateKey(decodeBase64Env(process.env.APPLE_PASS_SIGNER_KEY_BASE64)),
       signerKeyPassphrase: passphrase,
     }
   }
 
   if (process.env.APPLE_PASS_CERT_P12_BASE64) {
-    const p12Der = forge.util.decode64(process.env.APPLE_PASS_CERT_P12_BASE64)
+    const p12Base64 = String(process.env.APPLE_PASS_CERT_P12_BASE64).replace(/\s+/g, '')
+    const p12Der = forge.util.decode64(p12Base64)
     const p12Asn1 = forge.asn1.fromDer(p12Der)
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, passphrase)
 
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })
-    const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })
-
     const cert = certBags[forge.pki.oids.certBag]?.[0]?.cert
-    const key = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key
+    const key = extractPrivateKeyFromP12(p12)
 
     if (!cert || !key) {
-      throw new Error('Certificat Apple P12 invalide')
+      throw new Error('Certificat Apple P12 invalide ou mot de passe incorrect')
     }
 
     return {
