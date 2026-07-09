@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, Search } from 'lucide-react'
-import { DELIVERY_LABELS, ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
+import { AlertCircle, Bell, Package, Search } from 'lucide-react'
+import { ORDER_STATUS_LABELS } from '../../data/deliveryMethods'
 import { hydrateOrdersFromServer, loadCardOrders } from '../../store/orderStore'
 import { normalizeOrderStatus } from '../../services/orderServer'
 import type { CardOrderStatus } from '../../types/order'
@@ -24,16 +24,34 @@ export function AdminOrders() {
   const [search, setSearch] = useState('')
   const [orders, setOrders] = useState(() => loadCardOrders())
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [recentAlerts, setRecentAlerts] = useState<
+    Array<{
+      id: string
+      customerName: string
+      customerEmail: string
+      amount: number
+      orderType?: string
+      createdAt: string
+    }>
+  >([])
 
   const refresh = async () => {
     setLoading(true)
-    const merged = await hydrateOrdersFromServer()
-    setOrders(merged)
+    setError('')
+    const result = await hydrateOrdersFromServer()
+    setOrders(result.orders)
+    setRecentAlerts(result.recentAlerts ?? [])
+    if (result.error) setError(result.error)
     setLoading(false)
   }
 
   useEffect(() => {
     void refresh()
+    const interval = window.setInterval(() => {
+      void refresh()
+    }, 60_000)
+    return () => window.clearInterval(interval)
   }, [])
 
   const filtered = useMemo(() => {
@@ -76,6 +94,39 @@ export function AdminOrders() {
         </button>
       </div>
 
+      {error && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Impossible de synchroniser avec le serveur</p>
+            <p className="mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {recentAlerts.length > 0 && (
+        <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
+          <div className="flex items-center gap-2 text-violet-900">
+            <Bell className="h-5 w-5" />
+            <p className="font-semibold">Nouvelles demandes ({recentAlerts.length})</p>
+          </div>
+          <ul className="mt-3 space-y-2 text-sm text-violet-800">
+            {recentAlerts.map((alert) => (
+              <li key={alert.id} className="rounded-lg bg-white/70 px-3 py-2">
+                <span className="font-medium">{alert.customerName}</span> — {alert.customerEmail}
+                <span className="mx-2 text-violet-400">·</span>
+                {formatCurrency(alert.amount)}
+                {alert.orderType === 'replacement' && (
+                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                    Remplacement
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-center">
           <p className="text-2xl font-bold text-amber-700">{counts.pending_review}</p>
@@ -103,20 +154,20 @@ export function AdminOrders() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="search"
-          placeholder="Rechercher nom, email, référence..."
+          placeholder="Rechercher par nom, email ou référence…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-violet-500"
         />
       </div>
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
             onClick={() => setFilter(value)}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
               filter === value
                 ? 'bg-violet-600 text-white'
                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
@@ -127,62 +178,41 @@ export function AdminOrders() {
         ))}
       </div>
 
-      <div className="space-y-2">
-        {filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
-            Aucune commande trouvée
-          </div>
-        ) : (
-          filtered.map((order) => (
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
+          {loading ? 'Chargement des commandes…' : 'Aucune commande trouvée'}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((order) => (
             <Link
               key={order.id}
               to={`${ADMIN_BASE_PATH}/commandes/${order.id}`}
-              className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm sm:flex-row sm:items-center sm:gap-4"
+              className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
                 <Package className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">{order.userName}</p>
+                <p className="truncate font-semibold text-slate-900">{order.userName}</p>
                 <p className="truncate text-sm text-slate-500">{order.email}</p>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  {DELIVERY_LABELS[order.deliveryMethod]} ·{' '}
-                  {new Date(order.createdAt).toLocaleDateString('fr-GN')}
-                </p>
               </div>
-              <div className="shrink-0 sm:text-right">
-                <span
-                  className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    ['pending_review', 'paid'].includes(normalizeOrderStatus(order.status))
-                      ? 'bg-amber-100 text-amber-700'
-                      : normalizeOrderStatus(order.status) === 'approved'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : normalizeOrderStatus(order.status) === 'processing'
-                          ? 'bg-violet-100 text-violet-700'
-                          : normalizeOrderStatus(order.status) === 'shipped'
-                            ? 'bg-blue-100 text-blue-700'
-                            : ['activated', 'delivered'].includes(normalizeOrderStatus(order.status))
-                              ? 'bg-slate-200 text-slate-700'
-                              : normalizeOrderStatus(order.status) === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
+              <div className="text-right text-sm">
+                <p className="font-semibold text-slate-900">{formatCurrency(order.amount)}</p>
+                <p className="text-slate-500">
                   {ORDER_STATUS_LABELS[normalizeOrderStatus(order.status)] ?? order.status}
-                </span>
-                <p className="mt-1 text-sm font-semibold text-slate-700">
-                  {formatCurrency(order.amount)}
                 </p>
+                {order.orderType === 'replacement' && (
+                  <p className="text-xs font-medium text-amber-700">Remplacement</p>
+                )}
                 {order.cardNumber && (
-                  <p className="mt-0.5 font-mono text-xs text-slate-400">
-                    {maskCardNumber(order.cardNumber)}
-                  </p>
+                  <p className="font-mono text-xs text-slate-400">{maskCardNumber(order.cardNumber)}</p>
                 )}
               </div>
             </Link>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

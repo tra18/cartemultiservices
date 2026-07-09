@@ -25,12 +25,55 @@ export async function syncOrderToServer(order: CardOrder, options?: { admin?: bo
   return data.order ?? order
 }
 
-export async function fetchServerOrders(): Promise<CardOrder[]> {
+export async function fetchServerOrders(): Promise<{
+  orders: CardOrder[]
+  error?: string
+  unreadAlerts?: number
+  recentAlerts?: Array<{
+    id: string
+    customerName: string
+    customerEmail: string
+    amount: number
+    orderType?: string
+    createdAt: string
+  }>
+}> {
   const response = await fetch('/api/orders', {
     headers: getAdminAuthHeaders(),
   })
-  if (!response.ok) return []
-  return (await response.json()) as CardOrder[]
+
+  if (response.status === 401) {
+    return { orders: [], error: 'Session admin expirée. Reconnectez-vous sur /gm-console/acces.' }
+  }
+
+  if (!response.ok) {
+    return { orders: [], error: 'Impossible de charger les commandes depuis le serveur.' }
+  }
+
+  const data = (await response.json()) as
+    | CardOrder[]
+    | {
+        orders?: CardOrder[]
+        unreadAlerts?: number
+        recentAlerts?: Array<{
+          id: string
+          customerName: string
+          customerEmail: string
+          amount: number
+          orderType?: string
+          createdAt: string
+        }>
+      }
+
+  if (Array.isArray(data)) {
+    return { orders: data }
+  }
+
+  return {
+    orders: data.orders ?? [],
+    unreadAlerts: data.unreadAlerts ?? 0,
+    recentAlerts: data.recentAlerts ?? [],
+  }
 }
 
 export async function fetchMyOrder(): Promise<CardOrder | null> {

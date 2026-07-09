@@ -7,6 +7,11 @@ import finance from '../server/routes/finance.js'
 import card from '../server/routes/card.js'
 
 function getPathname(req) {
+  const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
+  if (typeof forwarded === 'string' && forwarded.startsWith('/api/')) {
+    return forwarded.split('?')[0]
+  }
+
   const raw = req.url ?? ''
   if (raw.startsWith('/')) return raw.split('?')[0]
   try {

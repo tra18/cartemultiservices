@@ -49,12 +49,12 @@ export function saveCardOrders(orders: CardOrder[]) {
 
 export async function hydrateOrdersFromServer() {
   try {
-    const serverOrders = await fetchServerOrders()
-    const merged = mergeOrders(loadCardOrders(), serverOrders)
+    const result = await fetchServerOrders()
+    const merged = mergeOrders(loadCardOrders(), result.orders)
     saveCardOrders(merged)
-    return merged
+    return { orders: merged, error: result.error, unreadAlerts: result.unreadAlerts, recentAlerts: result.recentAlerts }
   } catch {
-    return loadCardOrders()
+    return { orders: loadCardOrders(), error: 'Erreur réseau lors du chargement des commandes.' }
   }
 }
 

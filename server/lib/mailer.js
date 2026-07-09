@@ -13,23 +13,34 @@ function toHtml(text) {
     .replace(/\n/g, '<br />')
 }
 
+function normalizeRecipients(to) {
+  if (Array.isArray(to)) {
+    return to.map((value) => String(value).trim()).filter(Boolean)
+  }
+  if (typeof to === 'string' && to.trim()) {
+    return [to.trim()]
+  }
+  return []
+}
+
 export async function sendTypedEmail(type, data = {}) {
   if (!resendApiKey || !emailFrom) {
-    console.error('Email service not configured')
-    return { ok: false }
+    console.error('Email service not configured', { type })
+    return { ok: false, error: 'Email service not configured' }
   }
 
   const email = buildEmail(type, data)
-  if (!email?.to || !email.subject || !email.text) {
+  const recipients = normalizeRecipients(email?.to)
+  if (!recipients.length || !email?.subject || !email?.text) {
     console.error('Invalid email template', type)
-    return { ok: false }
+    return { ok: false, error: 'Invalid email template' }
   }
 
   try {
     const resend = new Resend(resendApiKey)
     const result = await resend.emails.send({
       from: emailFrom,
-      to: [email.to],
+      to: recipients,
       subject: email.subject,
       text: email.text,
       html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${toHtml(email.text)}</div>`,
@@ -37,13 +48,13 @@ export async function sendTypedEmail(type, data = {}) {
     })
 
     if (result.error) {
-      console.error('Resend API error', result.error)
+      console.error('Resend API error', type, result.error)
       return { ok: false, error: result.error.message }
     }
 
-    return { ok: true, id: result.data?.id ?? null }
+    return { ok: true, id: result.data?.id ?? null, to: recipients }
   } catch (error) {
-    console.error('Resend send failed', error)
-    return { ok: false }
+    console.error('Resend send failed', type, error)
+    return { ok: false, error: error instanceof Error ? error.message : 'Send failed' }
   }
 }

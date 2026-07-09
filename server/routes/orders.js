@@ -1,4 +1,5 @@
 import { sendTypedEmail } from '../lib/mailer.js'
+import { pushAdminAlert, loadAdminAlerts } from '../lib/adminAlerts.js'
 import {
   approveOrder,
   createReplacementOrder,
@@ -24,6 +25,11 @@ import {
 import { CARD_PRICE } from '../lib/pricing.js'
 
 function getPathname(req) {
+  const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
+  if (typeof forwarded === 'string' && forwarded.startsWith('/api/')) {
+    return forwarded.split('?')[0]
+  }
+
   const raw = req.url ?? ''
   if (raw.startsWith('/')) return raw.split('?')[0]
   try {
@@ -33,7 +39,35 @@ function getPathname(req) {
   }
 }
 
-async function sendNewOrderEmails(order, activationCode) {
+async function notifyAdminNewOrder(redis, order, orderType = 'initial') {
+  await pushAdminAlert(redis, {
+    type: 'new_order',
+    orderType,
+    orderId: order.id,
+    customerName: order.userName,
+    customerEmail: order.email,
+    amount: order.amount,
+    deliveryMethod: order.deliveryMethod,
+    status: order.status,
+  })
+
+  const emailResult = await sendTypedEmail('admin_order_notification', {
+    customerName: order.userName,
+    customerEmail: order.email,
+    amount: order.amount,
+    deliveryMethod: order.deliveryMethod,
+    orderType: orderType === 'replacement' ? 'replacement' : undefined,
+    orderId: order.id,
+  })
+
+  if (!emailResult.ok) {
+    console.error('Admin notification email failed', order.id, emailResult.error)
+  }
+
+  return emailResult
+}
+
+async function sendNewOrderEmails(redis, order, activationCode) {
   await sendTypedEmail('activation_code', {
     email: order.email,
     fullName: order.userName,
@@ -43,15 +77,10 @@ async function sendNewOrderEmails(order, activationCode) {
     email: order.email,
     fullName: order.userName,
   })
-  await sendTypedEmail('admin_order_notification', {
-    customerName: order.userName,
-    customerEmail: order.email,
-    amount: order.amount,
-    deliveryMethod: order.deliveryMethod,
-  })
+  await notifyAdminNewOrder(redis, order, 'initial')
 }
 
-async function sendReplacementOrderEmails(order, activationCode) {
+async function sendReplacementOrderEmails(redis, order, activationCode) {
   await sendTypedEmail('activation_code', {
     email: order.email,
     fullName: order.userName,
@@ -62,13 +91,7 @@ async function sendReplacementOrderEmails(order, activationCode) {
     fullName: order.userName,
     amount: order.amount,
   })
-  await sendTypedEmail('admin_order_notification', {
-    customerName: order.userName,
-    customerEmail: order.email,
-    amount: order.amount,
-    deliveryMethod: order.deliveryMethod,
-    orderType: 'replacement',
-  })
+  await notifyAdminNewOrder(redis, order, 'replacement')
 }
 
 async function handleOrdersReplacement(req, res, redis) {
@@ -92,7 +115,7 @@ async function handleOrdersReplacement(req, res, redis) {
 
   try {
     const { order, activationCode } = await createReplacementOrder(redis, session.user, body)
-    await sendReplacementOrderEmails(order, activationCode)
+    await sendReplacementOrderEmails(redis, order, activationCode)
     return res.status(200).json({ ok: true, order: stripOrderForClient(order) })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Commande échouée'
@@ -211,7 +234,14 @@ export default async function handler(req, res) {
       }
 
       const orders = (await loadOrders(redis)).map(stripOrderForAdmin)
-      return res.status(200).json(orders)
+      const alerts = await loadAdminAlerts(redis)
+      const unreadAlerts = alerts.filter((item) => !item.read).length
+
+      return res.status(200).json({
+        orders,
+        unreadAlerts,
+        recentAlerts: alerts.filter((item) => !item.read).slice(0, 10),
+      })
     }
 
     if (req.method === 'POST') {
@@ -250,7 +280,7 @@ export default async function handler(req, res) {
 
         const { isNew } = await upsertOrder(redis, prepared)
         if (isNew) {
-          await sendNewOrderEmails(prepared, activationCode)
+          await sendNewOrderEmails(redis, prepared, activationCode)
         }
 
         return res.status(200).json({ ok: true, order: stripOrderForAdmin(prepared) })

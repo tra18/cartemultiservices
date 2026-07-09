@@ -1,6 +1,18 @@
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@mscarte.com'
 const SUPPORT_EMAIL = process.env.EMAIL_REPLY_TO ?? 'support@mscarte.com'
 
+export function getAdminNotificationEmails() {
+  const raw =
+    process.env.ADMIN_NOTIFICATION_EMAILS ??
+    process.env.ADMIN_NOTIFICATION_EMAIL ??
+    ADMIN_EMAIL
+  const emails = raw
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+  return [...new Set(emails)]
+}
+
 function formatGnf(amount) {
   const value = Number(amount)
   if (!Number.isFinite(value)) return '0 GNF'
@@ -315,7 +327,7 @@ L'équipe Guinée Multiservices`,
 
     case 'admin_order_notification':
       return {
-        to: ADMIN_EMAIL,
+        to: getAdminNotificationEmails(),
         subject:
           data.orderType === 'replacement'
             ? 'Remplacement carte (perte/vol) — Guinée Multiservices'
@@ -328,6 +340,9 @@ ${data.orderType === 'replacement' ? 'Commande de remplacement (perte/vol décla
   Email : ${sanitize(data.customerEmail, 80)}
   Montant : ${formatGnf(data.amount)}
   Livraison : ${sanitize(data.deliveryMethod)}
+  Référence : ${sanitize(data.orderId, 40)}
+
+Connectez-vous au portail admin pour valider la commande.
 
 Cordialement,
 Système Guinée Multiservices`,
@@ -335,14 +350,14 @@ Système Guinée Multiservices`,
 
     case 'admin_merchant_notification':
       return {
-        to: ADMIN_EMAIL,
+        to: getAdminNotificationEmails(),
         subject: sanitize(data.subject, 120) || 'Notification commerçant',
         text: sanitize(data.body, 4000),
       }
 
     case 'admin_withdrawal_notification':
       return {
-        to: ADMIN_EMAIL,
+        to: getAdminNotificationEmails(),
         subject: sanitize(data.subject, 120) || 'Notification retrait',
         text: sanitize(data.body, 4000),
       }
