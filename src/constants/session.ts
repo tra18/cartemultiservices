@@ -1,4 +1,9 @@
-export const IDLE_TIMEOUT_MS = 15 * 60 * 1000
+export const CLIENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000
+export const MERCHANT_IDLE_TIMEOUT_MS = 10 * 60 * 1000
+export const ADMIN_IDLE_TIMEOUT_MS = 15 * 60 * 1000
+
+/** @deprecated Utiliser CLIENT_IDLE_TIMEOUT_MS */
+export const IDLE_TIMEOUT_MS = CLIENT_IDLE_TIMEOUT_MS
 
 export const IDLE_ACTIVITY_KEY = 'carte-ms-last-activity'
 

@@ -1,6 +1,11 @@
 import { useAuth } from '../context/AuthContext'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { useMerchantAuth } from '../context/MerchantAuthContext'
+import {
+  ADMIN_IDLE_TIMEOUT_MS,
+  CLIENT_IDLE_TIMEOUT_MS,
+  MERCHANT_IDLE_TIMEOUT_MS,
+} from '../constants/session'
 import { useIdleTimeout } from '../hooks/useIdleTimeout'
 
 export function IdleSessionGuard() {
@@ -8,14 +13,27 @@ export function IdleSessionGuard() {
   const { isAuthenticated: isAdmin, logout: logoutAdmin } = useAdminAuth()
   const { isAuthenticated: isMerchant, logout: logoutMerchant } = useMerchantAuth()
 
-  const isActive = isClient || isAdmin || isMerchant
+  useIdleTimeout({
+    enabled: isClient,
+    timeoutMs: CLIENT_IDLE_TIMEOUT_MS,
+    onIdle: () => {
+      void logoutClient()
+    },
+  })
 
   useIdleTimeout({
-    enabled: isActive,
+    enabled: isMerchant,
+    timeoutMs: MERCHANT_IDLE_TIMEOUT_MS,
     onIdle: () => {
-      if (isClient) void logoutClient()
-      if (isAdmin) void logoutAdmin()
-      if (isMerchant) logoutMerchant()
+      logoutMerchant()
+    },
+  })
+
+  useIdleTimeout({
+    enabled: isAdmin,
+    timeoutMs: ADMIN_IDLE_TIMEOUT_MS,
+    onIdle: () => {
+      void logoutAdmin()
     },
   })
 
