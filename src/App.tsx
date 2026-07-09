@@ -44,6 +44,7 @@ import { AdminOrders } from './pages/admin/AdminOrders'
 import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
 import { AdminPrintCard } from './pages/admin/AdminPrintCard'
 import { AdminFinance } from './pages/admin/AdminFinance'
+import { AdminUsers } from './pages/admin/AdminUsers'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
 import { IdleSessionGuard } from './components/IdleSessionGuard'
 
@@ -73,6 +74,7 @@ export default function App() {
               }
             >
               <Route index element={<AdminOrders />} />
+              <Route path="comptes" element={<AdminUsers />} />
               <Route path="finances" element={<AdminFinance />} />
               <Route path="commandes/:orderId" element={<AdminOrderDetail />} />
               <Route path="commandes/:orderId/imprimer" element={<AdminPrintCard />} />

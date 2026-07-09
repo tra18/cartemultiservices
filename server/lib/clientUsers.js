@@ -2,11 +2,45 @@ import { randomUUID } from 'crypto'
 
 const USER_PREFIX = 'client-user:'
 const EMAIL_INDEX = 'client-email:'
+const USERS_INDEX_KEY = 'client-users-index'
 
 export function stripUserForClient(user) {
   if (!user) return null
   const { passwordHash, cardPinHash, cardPin, ...clientUser } = user
   return clientUser
+}
+
+export function stripUserForAdmin(user) {
+  if (!user) return null
+  const { passwordHash, cardPinHash, cardPin, transactions, ...adminUser } = user
+  return {
+    ...adminUser,
+    transactionCount: Array.isArray(transactions) ? transactions.length : 0,
+    hasPin: Boolean(cardPinHash || cardPin || user.digitalCardEnabledAt),
+  }
+}
+
+async function rebuildUsersIndex(redis) {
+  for await (const key of redis.scanIterator({ match: `${USER_PREFIX}*`, count: 50 })) {
+    const userId = String(key).slice(USER_PREFIX.length)
+    if (userId) await redis.sadd(USERS_INDEX_KEY, userId)
+  }
+}
+
+export async function listAllUsers(redis) {
+  const indexSize = await redis.scard(USERS_INDEX_KEY)
+  if (!indexSize) {
+    await rebuildUsersIndex(redis)
+  }
+
+  const ids = await redis.smembers(USERS_INDEX_KEY)
+  if (!ids?.length) return []
+
+  const users = await Promise.all(ids.map((id) => getUserById(redis, id)))
+  return users
+    .filter(Boolean)
+    .map(stripUserForAdmin)
+    .sort((a, b) => a.fullName.localeCompare(b.fullName, 'fr'))
 }
 
 export async function getUserById(redis, userId) {
@@ -43,6 +77,7 @@ export function createUserRecord({ email, passwordHash, fullName, phone, cardSta
 export async function saveUser(redis, user) {
   await redis.set(`${USER_PREFIX}${user.id}`, user)
   await redis.set(`${EMAIL_INDEX}${user.email.toLowerCase()}`, user.id)
+  await redis.sadd(USERS_INDEX_KEY, user.id)
 }
 
 const CLIENT_PATCHABLE_FIELDS = new Set(['fullName', 'phone'])
