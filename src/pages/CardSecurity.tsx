@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Lock, ShieldCheck, ShieldOff } from 'lucide-react'
 import { CardPinModal } from '../components/CardPinModal'
+import { ResetCardPinPanel } from '../components/ResetCardPinPanel'
 import { useAuth } from '../context/AuthContext'
 import { maskCardNumber } from '../utils/card'
 import { getEffectiveCardNumber, isCardUsable } from '../utils/cardStatus'
@@ -92,6 +93,8 @@ export function CardSecurity() {
           <p className="mt-2 text-xs text-slate-400">PIN configuré à l&apos;activation</p>
         )}
       </div>
+
+      <ResetCardPinPanel />
 
       <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
         <div className="flex gap-2">

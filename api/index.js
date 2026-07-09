@@ -30,6 +30,7 @@ const ROUTES = {
   '/api/digital-card': card,
   '/api/verify-card-pin': card,
   '/api/card-security': card,
+  '/api/reset-card-pin': card,
 }
 
 export default async function handler(req, res) {

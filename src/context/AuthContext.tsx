@@ -14,7 +14,7 @@ import {
   activateCardWithCode,
   createCardOrder,
 } from '../store/orderStore'
-import { cardSecurityAction, enableDigitalCardOnServer, verifyCardPinOnServer } from '../services/orderServer'
+import { cardSecurityAction, confirmCardPinResetOnServer, enableDigitalCardOnServer, requestCardPinResetOnServer, verifyCardPinOnServer } from '../services/orderServer'
 import { validateAndSanitizeOrderData } from '../utils/orderSecurity'
 import { resetRateLimit } from '../utils/formSecurity'
 import { canEnableDigitalCard, isCardUsable } from '../utils/cardStatus'
@@ -68,6 +68,8 @@ interface AuthContextValue {
   verifyCardPin: (pin: string) => Promise<string | null>
   blockCard: () => Promise<string | null>
   unblockCard: (pin: string) => Promise<string | null>
+  requestCardPinReset: () => Promise<{ error: string | null; maskedEmail?: string }>
+  resetCardPin: (code: string, newPin: string) => Promise<string | null>
   addToMobileWallet: (wallet: 'apple' | 'google') => string | null
   enableDigitalCard: (pin: string) => Promise<string | null>
   markCardShipped: () => void
@@ -191,6 +193,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await cardSecurityAction('unblock', pin)
     if (!result.ok) return result.error ?? 'Déblocage échoué'
     setSessionCardPin(pin)
+    await refreshCurrentUser()
+    return null
+  }
+
+  const requestCardPinReset = async (): Promise<{ error: string | null; maskedEmail?: string }> => {
+    if (!currentUser) return { error: 'Non connecté' }
+    const result = await requestCardPinResetOnServer()
+    if (!result.ok) return { error: result.error ?? 'Envoi du code échoué' }
+    return { error: null, maskedEmail: result.email }
+  }
+
+  const resetCardPin = async (code: string, newPin: string): Promise<string | null> => {
+    if (!currentUser) return 'Non connecté'
+    const pinErr = validateCardPin(newPin)
+    if (pinErr) return pinErr
+
+    const result = await confirmCardPinResetOnServer(code, newPin)
+    if (!result.ok) return result.error ?? 'Réinitialisation échouée'
+
+    setSessionCardPin(newPin)
     await refreshCurrentUser()
     return null
   }
@@ -428,6 +450,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyCardPin,
         blockCard,
         unblockCard,
+        requestCardPinReset,
+        resetCardPin,
         addToMobileWallet,
         enableDigitalCard,
         markCardShipped,

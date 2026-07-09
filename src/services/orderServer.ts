@@ -139,6 +139,47 @@ export async function cardSecurityAction(
   return { ok: true, cardStatus: data.cardStatus }
 }
 
+export async function requestCardPinResetOnServer(): Promise<{
+  ok: boolean
+  error?: string
+  email?: string
+}> {
+  const response = await fetch('/api/reset-card-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getClientAuthHeaders() },
+    body: JSON.stringify({ action: 'request' }),
+  })
+  const data = (await response.json().catch(() => ({}))) as {
+    ok?: boolean
+    error?: string
+    email?: string
+  }
+  if (!response.ok) {
+    return { ok: false, error: data.error ?? 'Envoi du code échoué' }
+  }
+  return { ok: true, email: data.email }
+}
+
+export async function confirmCardPinResetOnServer(
+  code: string,
+  newPin: string
+): Promise<{ ok: boolean; error?: string; cardStatus?: string }> {
+  const response = await fetch('/api/reset-card-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getClientAuthHeaders() },
+    body: JSON.stringify({ action: 'confirm', code, newPin }),
+  })
+  const data = (await response.json().catch(() => ({}))) as {
+    ok?: boolean
+    error?: string
+    cardStatus?: string
+  }
+  if (!response.ok) {
+    return { ok: false, error: data.error ?? 'Réinitialisation échouée' }
+  }
+  return { ok: true, cardStatus: data.cardStatus }
+}
+
 /** Le serveur fait foi — le local sert de cache d'affichage uniquement */
 export function mergeOrders(localOrders: CardOrder[], serverOrders: CardOrder[]): CardOrder[] {
   const byId = new Map<string, CardOrder>()

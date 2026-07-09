@@ -6,6 +6,37 @@ import { hashPassword, verifyPassword } from '../lib/password.js'
 import { getClientIp, getRedis, parseBody, rateLimit } from '../lib/security.js'
 
 const MAX_PIN_ATTEMPTS = 3
+const PIN_RESET_TTL_SEC = 900
+
+function generateResetCode() {
+  return String(Math.floor(100000 + Math.random() * 900000))
+}
+
+function isWeakPin(pin) {
+  return pin === '0000' || pin === '1234'
+}
+
+function userHasPin(user) {
+  return Boolean(user.cardPinHash || user.cardPin || user.digitalCardEnabledAt)
+}
+
+function maskEmail(email) {
+  const value = String(email ?? '')
+  const at = value.indexOf('@')
+  if (at <= 0) return value
+  const local = value.slice(0, at)
+  const domain = value.slice(at + 1)
+  const masked =
+    local.length <= 2
+      ? '**'
+      : `${local[0]}${'*'.repeat(Math.min(local.length - 2, 4))}${local[local.length - 1]}`
+  return `${masked}@${domain}`
+}
+
+function cardStatusAfterPinReset(user) {
+  if (user.cardStatus !== 'blocked') return user.cardStatus
+  return user.cardNumber ? 'active' : 'none'
+}
 
 function getPathname(req) {
   const raw = req.url ?? ''
@@ -199,6 +230,82 @@ async function handleCardSecurity(req, res, redis, session) {
   return res.status(200).json({ ok: true, cardStatus: 'active' })
 }
 
+async function handleResetCardPin(req, res, redis, session) {
+  const body = parseBody(req)
+  const action = body.action
+  const redisKey = `pin-reset:${session.userId}`
+
+  const user = await getUserById(redis, session.userId)
+  if (!user) return res.status(404).json({ error: 'Compte introuvable' })
+  if (!userHasPin(user)) {
+    return res.status(400).json({ error: 'Aucun code PIN configuré sur votre compte' })
+  }
+
+  if (action === 'request') {
+    const allowed = await rateLimit(redis, `rate:pin-reset-req:${session.userId}`, 3, 3600)
+    if (!allowed) {
+      return res.status(429).json({ error: 'Trop de demandes. Réessayez dans une heure.' })
+    }
+
+    const code = generateResetCode()
+    await redis.set(redisKey, hashPassword(code), { ex: PIN_RESET_TTL_SEC })
+
+    await sendTypedEmail('pin_reset_code', {
+      email: user.email,
+      fullName: user.fullName,
+      resetCode: code,
+    })
+
+    return res.status(200).json({ ok: true, email: maskEmail(user.email) })
+  }
+
+  if (action === 'confirm') {
+    const allowed = await rateLimit(redis, `rate:pin-reset-confirm:${session.userId}`, 10, 3600)
+    if (!allowed) {
+      return res.status(429).json({ error: 'Trop de tentatives. Réessayez plus tard.' })
+    }
+
+    const code = String(body.code ?? '').trim()
+    const newPin = String(body.newPin ?? '').trim()
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'Code de vérification invalide (6 chiffres)' })
+    }
+    if (!/^\d{4}$/.test(newPin)) {
+      return res.status(400).json({ error: 'Le nouveau PIN doit contenir 4 chiffres' })
+    }
+    if (isWeakPin(newPin)) {
+      return res.status(400).json({ error: 'Choisissez un PIN plus sécurisé (évitez 0000, 1234)' })
+    }
+
+    const storedHash = await redis.get(redisKey)
+    if (!storedHash || !verifyPassword(code, storedHash)) {
+      return res.status(400).json({ error: 'Code incorrect ou expiré. Demandez un nouveau code.' })
+    }
+
+    const cardStatus = cardStatusAfterPinReset(user)
+
+    await saveUser(redis, {
+      ...user,
+      cardPinHash: hashPassword(newPin),
+      cardPin: undefined,
+      pinFailedAttempts: 0,
+      cardStatus,
+    })
+
+    await redis.del(redisKey)
+
+    await sendTypedEmail('pin_reset_confirmation', {
+      email: user.email,
+      fullName: user.fullName,
+    })
+
+    return res.status(200).json({ ok: true, cardStatus })
+  }
+
+  return res.status(400).json({ error: 'Action invalide' })
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -221,6 +328,7 @@ export default async function handler(req, res) {
   if (path.endsWith('/digital-card')) return handleDigitalCard(req, res, redis, session)
   if (path.endsWith('/verify-card-pin')) return handleVerifyPin(req, res, redis, session)
   if (path.endsWith('/card-security')) return handleCardSecurity(req, res, redis, session)
+  if (path.endsWith('/reset-card-pin')) return handleResetCardPin(req, res, redis, session)
 
   return res.status(404).json({ error: 'Route carte inconnue' })
 }

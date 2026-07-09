@@ -78,6 +78,40 @@ Cordialement,
 L'équipe Guinée Multiservices`,
       }
 
+    case 'pin_reset_code':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Réinitialisation de votre code PIN carte',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Vous avez demandé à réinitialiser le code PIN de votre carte multiservice.
+
+Votre code de vérification (valable 15 minutes) :
+
+  ${sanitize(data.resetCode, 8)}
+
+Saisissez ce code dans l'application, section Sécurité carte → PIN oublié.
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et contactez le support : ${SUPPORT_EMAIL}
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
+    case 'pin_reset_confirmation':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Votre code PIN carte a été modifié',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Votre code PIN carte a été réinitialisé avec succès.
+
+Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement le support : ${SUPPORT_EMAIL}
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
     case 'order_approved':
       return {
         to: sanitize(data.email, 80),
