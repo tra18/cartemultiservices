@@ -165,64 +165,95 @@ export function OrderCard() {
 
   if (step === 3) {
     return (
-      <div className="page-container flex flex-col items-center justify-center text-center">
-        <CheckCircle className="h-16 w-16 text-emerald-500" />
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">Commande confirmée !</h1>
-        <p className="mt-2 text-slate-600">
-          Votre carte a été commandée pour {formatCurrency(CARD_PRICE)}.
-        </p>
-        {orderId && (
-          <p className="mt-2 text-sm text-slate-500">Référence : {orderId.slice(0, 8).toUpperCase()}</p>
-        )}
+      <div className="page-container flex min-h-[70vh] items-center justify-center py-8">
+        <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-6 py-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white">
+              <CheckCircle className="h-8 w-8" strokeWidth={2.25} />
+            </div>
+            <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">
+              Commande confirmée
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Votre carte multiservice a été commandée pour{' '}
+              <span className="font-semibold text-slate-900">{formatCurrency(CARD_PRICE)}</span>
+            </p>
+            {orderId && (
+              <p className="mt-3 inline-block rounded-full border border-slate-200 bg-white px-3 py-1 font-mono text-xs text-slate-600">
+                Réf. {orderId.slice(0, 8).toUpperCase()}
+              </p>
+            )}
+          </div>
 
-        <div className="mt-6 w-full space-y-3 text-left">
-          {!isExistingAccount && (
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-              <div className="flex items-start gap-3">
-                <UserPlus className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
-                <div className="text-sm text-indigo-800">
-                  <p className="font-semibold text-indigo-900">Votre compte est créé</p>
-                  <p className="mt-1">
-                    Connectez-vous plus tard avec <span className="font-medium">{orderEmail}</span> et
-                    le mot de passe choisi à la commande.
+          <div className="space-y-4 px-6 py-6 text-left">
+            {!isExistingAccount && (
+              <div className="flex gap-3 rounded-xl border border-slate-200 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 text-sm">
+                  <p className="font-semibold text-slate-900">Compte client créé</p>
+                  <p className="mt-1 text-slate-600">
+                    Connectez-vous avec <span className="font-medium text-slate-900">{orderEmail}</span>{' '}
+                    et le mot de passe choisi à la commande.
                   </p>
-                  <p className="mt-2 text-xs text-indigo-600">
-                    Un email de bienvenue avec ces informations vous a été envoyé.
+                  <p className="mt-2 text-xs text-slate-500">
+                    Un email de bienvenue vous a été envoyé.
                   </p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <div className="flex items-start gap-3">
-              <Mail className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <div className="text-sm text-emerald-800">
-                <p className="font-semibold text-emerald-900">Code d&apos;activation envoyé</p>
-                <p className="mt-1">
-                  Un second email contient votre code à 6 caractères pour activer la carte après
-                  réception.
+            <div className="flex gap-3 rounded-xl border border-slate-200 p-4">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                <Mail className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 text-sm">
+                <p className="font-semibold text-slate-900">Code d&apos;activation envoyé</p>
+                <p className="mt-1 text-slate-600">
+                  Consultez votre boîte mail : un code à 6 caractères vous permettra d&apos;activer
+                  la carte à réception.
                 </p>
               </div>
             </div>
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-sm font-semibold text-slate-900">Prochaines étapes</p>
+              <ol className="mt-3 space-y-3">
+                {!isExistingAccount && (
+                  <li className="flex gap-3 text-sm text-slate-600">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                      1
+                    </span>
+                    <span>Conservez votre mot de passe en lieu sûr</span>
+                  </li>
+                )}
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                    {!isExistingAccount ? 2 : 1}
+                  </span>
+                  <span>Attendez la livraison de votre carte (2 à 5 jours ouvrés)</span>
+                </li>
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                    {!isExistingAccount ? 3 : 2}
+                  </span>
+                  <span>Connectez-vous, puis activez la carte avec le QR et le code reçu par email</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 px-6 py-5">
+            <button
+              type="button"
+              onClick={() => navigate('/ma-commande')}
+              className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Suivre ma commande
+            </button>
           </div>
         </div>
-
-        <div className="mt-4 w-full rounded-xl border border-slate-200 bg-white p-4 text-left text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">Prochaines étapes</p>
-          <ol className="mt-2 list-inside list-decimal space-y-1">
-            {!isExistingAccount && <li>Conservez votre mot de passe en lieu sûr</li>}
-            <li>Attendez la livraison de votre carte (2-5 jours)</li>
-            <li>Connectez-vous → Activez avec QR carte + code email</li>
-          </ol>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate('/ma-commande')}
-          className="mt-6 w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white hover:bg-indigo-700"
-        >
-          Suivre ma commande
-        </button>
       </div>
     )
   }
