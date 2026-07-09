@@ -6,7 +6,11 @@ import { buildCardQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
 function decodeBase64Env(value) {
   const cleaned = String(value ?? '').replace(/\s+/g, '')
   if (!cleaned) return Buffer.alloc(0)
-  return Buffer.from(cleaned, 'base64')
+  const buffer = Buffer.from(cleaned, 'base64')
+  if (!buffer.length) {
+    throw new Error('Base64 invalide ou vide après décodage')
+  }
+  return buffer
 }
 
 function toPemCertificate(buffer) {
@@ -43,7 +47,12 @@ function extractPrivateKeyFromP12(p12) {
 }
 
 function loadAppleCertificates() {
-  const wwdr = toPemCertificate(decodeBase64Env(process.env.APPLE_WWDR_CERT_BASE64))
+  const wwdrDecoded = decodeBase64Env(process.env.APPLE_WWDR_CERT_BASE64)
+  if (!wwdrDecoded.length) {
+    throw new Error('APPLE_WWDR_CERT_BASE64 est vide')
+  }
+
+  const wwdr = toPemCertificate(wwdrDecoded)
   const passphrase = process.env.APPLE_PASS_CERT_PASSWORD ?? ''
 
   if (process.env.APPLE_PASS_SIGNER_CERT_BASE64 && process.env.APPLE_PASS_SIGNER_KEY_BASE64) {
@@ -56,9 +65,12 @@ function loadAppleCertificates() {
   }
 
   if (process.env.APPLE_PASS_CERT_P12_BASE64) {
-    const p12Base64 = String(process.env.APPLE_PASS_CERT_P12_BASE64).replace(/\s+/g, '')
-    const p12Der = forge.util.decode64(p12Base64)
-    const p12Asn1 = forge.asn1.fromDer(p12Der)
+    const p12Buffer = decodeBase64Env(process.env.APPLE_PASS_CERT_P12_BASE64)
+    if (!p12Buffer.length) {
+      throw new Error('APPLE_PASS_CERT_P12_BASE64 est vide')
+    }
+
+    const p12Asn1 = forge.asn1.fromDer(p12Buffer.toString('binary'))
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, passphrase)
 
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })
@@ -66,7 +78,9 @@ function loadAppleCertificates() {
     const key = extractPrivateKeyFromP12(p12)
 
     if (!cert || !key) {
-      throw new Error('Certificat Apple P12 invalide ou mot de passe incorrect')
+      throw new Error(
+        'P12 illisible sur le serveur (certificat ou clé manquants, ou mot de passe incorrect)'
+      )
     }
 
     return {

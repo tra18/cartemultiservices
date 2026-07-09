@@ -1,3 +1,4 @@
+import { getAppleWalletErrorMessage } from './_lib/applePassDiagnostics.js'
 import { createAppleWalletPass } from './_lib/applePass.js'
 import { createGoogleWalletSaveUrl } from './_lib/googleWallet.js'
 import { sendTypedEmail } from './_lib/mailer.js'
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Wallet provisioning failed', error)
     return res.status(500).json({
-      error: 'Impossible de générer le pass wallet. Vérifiez la configuration des certificats.',
+      error: getAppleWalletErrorMessage(error),
     })
   }
 }

@@ -16,6 +16,7 @@
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.23.0",
+    "node-forge": "^1.4.0",
     "passkit-generator": "^3.5.7",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",

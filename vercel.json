@@ -25,6 +25,10 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/wallet-health.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/client-auth.js",
       "use": "@vercel/node"
     },
@@ -38,6 +42,7 @@
     { "src": "/api/orders", "dest": "/api/orders.js" },
     { "src": "/api/admin-auth", "dest": "/api/admin-auth.js" },
     { "src": "/api/wallet", "dest": "/api/wallet.js" },
+    { "src": "/api/wallet-health", "dest": "/api/wallet-health.js" },
     { "src": "/api/client-auth", "dest": "/api/client-auth.js" },
     { "src": "/api/finance", "dest": "/api/finance.js" },
     { "handle": "filesystem" },
