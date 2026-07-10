@@ -1,18 +1,10 @@
-import { History, Home, LogOut, PlusCircle, QrCode, ShoppingBag, Store, User } from 'lucide-react'
+import { LogOut, Store } from 'lucide-react'
 import { Link, Outlet } from 'react-router-dom'
 import { AppShell } from './AppShell'
 import { PlatformLogo } from './PlatformLogo'
-import { PLATFORM_NAME, CLIENT_DASHBOARD_PATH } from '../constants/brand'
+import { PLATFORM_NAME } from '../constants/brand'
 import { useAuth } from '../context/AuthContext'
-
-const navItems = [
-  { to: CLIENT_DASHBOARD_PATH, label: 'Accueil', icon: Home, end: true },
-  { to: '/scanner', label: 'Scanner', icon: QrCode },
-  { to: '/recharger', label: 'Recharger', icon: PlusCircle },
-  { to: '/payer', label: 'Payer', icon: ShoppingBag },
-  { to: '/historique', label: 'Historique', icon: History },
-  { to: '/profil', label: 'Profil', icon: User },
-]
+import { clientMobileBar, clientNavGroups } from '../navigation/clientNav'
 
 export function Layout() {
   const { currentUser, logout } = useAuth()
@@ -54,7 +46,13 @@ export function Layout() {
   )
 
   return (
-    <AppShell header={header} navItems={navItems} accent="indigo" width="app">
+    <AppShell
+      header={header}
+      navGroups={clientNavGroups}
+      mobileBar={clientMobileBar}
+      accent="indigo"
+      width="app"
+    >
       <Outlet />
     </AppShell>
   )

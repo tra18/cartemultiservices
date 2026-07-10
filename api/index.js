@@ -6,6 +6,7 @@ import clientAuth from '../server/routes/client-auth.js'
 import finance from '../server/routes/finance.js'
 import card from '../server/routes/card.js'
 import clientUsersAdmin from '../server/routes/client-users-admin.js'
+import careers from '../server/routes/careers.js'
 
 function getPathname(req) {
   const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
@@ -40,6 +41,8 @@ const ROUTES = {
   '/api/card-security': card,
   '/api/reset-card-pin': card,
   '/api/client-users-admin': clientUsersAdmin,
+  '/api/careers': careers,
+  '/api/careers-admin': careers,
 }
 
 export default async function handler(req, res) {

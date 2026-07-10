@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useResponsiveQrSize } from '../hooks/useResponsiveQrSize'
 import { useNavigate } from 'react-router-dom'
 import { Html5Qrcode } from 'html5-qrcode'
 import { Camera, Keyboard } from 'lucide-react'
@@ -10,6 +11,7 @@ export function ScanPay() {
   const [manualId, setManualId] = useState('')
   const [error, setError] = useState('')
   const [mode, setMode] = useState<'camera' | 'manual'>('camera')
+  const qrSize = useResponsiveQrSize(250, 0.7)
 
   const extractPaymentId = (text: string): string | null => {
     const urlMatch = text.match(/paiement-qr\/([a-f0-9-]+)/i)
@@ -51,7 +53,7 @@ export function ScanPay() {
     scanner
       .start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: qrSize, height: qrSize } },
         (text) => {
           if (mounted) handleScanResult(text)
         },
@@ -71,7 +73,7 @@ export function ScanPay() {
       mounted = false
       stopScanner()
     }
-  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, qrSize]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault()

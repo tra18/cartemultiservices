@@ -362,6 +362,40 @@ Système Guinée Multiservices`,
         text: sanitize(data.body, 4000),
       }
 
+    case 'application_received':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Candidature reçue — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Nous avons bien reçu votre candidature pour le poste :
+  ${sanitize(data.jobTitle, 120)}
+
+Notre équipe RH examinera votre profil et vous contactera si votre candidature est retenue.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
+    case 'admin_application_notification':
+      return {
+        to: getAdminNotificationEmails(),
+        subject: 'Nouvelle candidature — Guinée Multiservices',
+        text: `Bonjour Admin,
+
+Une nouvelle candidature a été reçue.
+
+  Poste : ${sanitize(data.jobTitle, 120)}
+  Candidat : ${sanitize(data.candidateName)}
+  Email : ${sanitize(data.candidateEmail, 80)}
+  Référence : ${sanitize(data.applicationId, 40)}
+
+Connectez-vous au portail admin pour consulter la candidature.
+
+Cordialement,
+Système Guinée Multiservices`,
+      }
+
     default:
       return null
   }

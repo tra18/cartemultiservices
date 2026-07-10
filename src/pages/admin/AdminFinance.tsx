@@ -249,12 +249,12 @@ export function AdminFinance() {
             </p>
           ) : (
             entries.slice(0, 20).map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-white px-4 py-3">
-                <div>
+              <div key={entry.id} className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800">{entry.label}</p>
                   <p className="text-xs text-slate-400">{new Date(entry.date).toLocaleString('fr-GN')}</p>
                 </div>
-                <p className={`font-semibold ${entry.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                <p className={`shrink-0 font-semibold ${entry.amount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {entry.amount >= 0 ? '+' : ''}
                   {formatCurrency(entry.amount)}
                 </p>

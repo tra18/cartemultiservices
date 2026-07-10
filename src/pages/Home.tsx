@@ -8,12 +8,14 @@ import {
   Fuel,
   Lock,
   Mail,
+  Menu,
   QrCode,
   Shield,
   ShoppingCart,
   Smartphone,
   Store,
   UtensilsCrossed,
+  X,
 } from 'lucide-react'
 import { PlatformLogo } from '../components/PlatformLogo'
 import { LoginModal } from '../components/LoginModal'
@@ -29,9 +31,10 @@ import { CARD_PRICE } from '../utils/pricing'
 import { formatCurrency } from '../utils/currency'
 
 const NAV_LINKS = [
-  { href: '#services', label: 'Services' },
-  { href: '#parcours', label: 'Parcours client' },
-  { href: '#commercants', label: 'Commerçants' },
+  { href: '#services', label: 'Services', external: false },
+  { href: '#parcours', label: 'Parcours client', external: false },
+  { href: '#commercants', label: 'Commerçants', external: false },
+  { href: '/carrieres', label: 'Carrières', external: true },
 ]
 
 const SERVICES = [
@@ -96,6 +99,7 @@ export function Home() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [loginOpen, setLoginOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const primaryCta = isAuthenticated ? CLIENT_DASHBOARD_PATH : '/commander-carte'
   const primaryLabel = isAuthenticated ? 'Mon espace client' : 'Commander ma carte'
@@ -124,15 +128,25 @@ export function Home() {
           </Link>
 
           <nav className="hidden items-center gap-8 lg:flex">
-            {NAV_LINKS.map(({ href, label }) => (
-              <a
-                key={href}
-                href={href}
-                className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
-              >
-                {label}
-              </a>
-            ))}
+            {NAV_LINKS.map(({ href, label, external }) =>
+              external ? (
+                <Link
+                  key={href}
+                  to={href}
+                  className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+                >
+                  {label}
+                </Link>
+              ) : (
+                <a
+                  key={href}
+                  href={href}
+                  className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+                >
+                  {label}
+                </a>
+              )
+            )}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -146,21 +160,118 @@ export function Home() {
               <button
                 type="button"
                 onClick={() => setLoginOpen(true)}
-                className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+                className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 sm:inline-flex"
               >
                 Connexion
               </button>
             )}
             <Link
               to={primaryCta}
-              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 sm:px-5"
+              className="hidden items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 sm:inline-flex sm:px-5"
             >
               {primaryLabel}
               <ArrowRight className="h-4 w-4" />
             </Link>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-stone-700 transition hover:bg-stone-100 lg:hidden"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </header>
+
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-[2px]"
+            aria-label="Fermer le menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="absolute inset-x-0 top-0 max-h-[90vh] overflow-y-auto rounded-b-2xl bg-white shadow-2xl safe-top">
+            <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4">
+              <p className="text-sm font-semibold text-stone-900">Navigation</p>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100"
+                aria-label="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-6 p-5">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+                  Découvrir
+                </p>
+                <div className="mt-2 space-y-1">
+                  {NAV_LINKS.map(({ href, label, external }) =>
+                    external ? (
+                      <Link
+                        key={href}
+                        to={href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                      >
+                        {label}
+                      </Link>
+                    ) : (
+                      <a
+                        key={href}
+                        href={href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                      >
+                        {label}
+                      </a>
+                    )
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
+                  Accès
+                </p>
+                <div className="mt-2 space-y-1">
+                  <Link
+                    to="/commercant/connexion"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
+                  >
+                    <Store className="h-5 w-5 text-stone-500" />
+                    Espace commerçant
+                  </Link>
+                  {!isAuthenticated && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        setLoginOpen(true)
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-stone-700 hover:bg-stone-50"
+                    >
+                      Connexion client
+                    </button>
+                  )}
+                  <Link
+                    to={primaryCta}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white"
+                  >
+                    {primaryLabel}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-stone-200">
@@ -469,7 +580,7 @@ export function Home() {
       {/* Footer */}
       <footer className="border-t border-stone-200 bg-white py-14">
         <div className="mx-auto max-w-7xl px-5 lg:px-10">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
             <div className="sm:col-span-2">
               <PlatformLogo size="sm" showName />
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-stone-500">
@@ -505,6 +616,18 @@ export function Home() {
                     </Link>
                   </li>
                 )}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Entreprise
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-stone-600">
+                <li>
+                  <Link to="/carrieres" className="hover:text-stone-900">
+                    Carrière chez nous
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>

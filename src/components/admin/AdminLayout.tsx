@@ -1,15 +1,10 @@
 import { Outlet } from 'react-router-dom'
-import { ClipboardList, LogOut, UserRound, Wallet } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { AppShell } from '../AppShell'
 import { PlatformLogo } from '../PlatformLogo'
-import { ADMIN_BASE_PATH, PLATFORM_NAME } from '../../constants/brand'
+import { PLATFORM_NAME } from '../../constants/brand'
 import { useAdminAuth } from '../../context/AdminAuthContext'
-
-const navItems = [
-  { to: ADMIN_BASE_PATH, label: 'Commandes cartes', icon: ClipboardList, end: true },
-  { to: `${ADMIN_BASE_PATH}/comptes`, label: 'Comptes clients', icon: UserRound },
-  { to: `${ADMIN_BASE_PATH}/finances`, label: 'Finances & retraits', icon: Wallet },
-]
+import { adminMobileBar, adminNavGroups } from '../../navigation/adminNav'
 
 export function AdminLayout() {
   const { adminEmail, logout } = useAdminAuth()
@@ -37,7 +32,13 @@ export function AdminLayout() {
   )
 
   return (
-    <AppShell header={header} navItems={navItems} accent="violet" width="admin">
+    <AppShell
+      header={header}
+      navGroups={adminNavGroups}
+      mobileBar={adminMobileBar}
+      accent="violet"
+      width="admin"
+    >
       <Outlet />
     </AppShell>
   )

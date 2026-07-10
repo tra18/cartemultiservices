@@ -161,7 +161,8 @@ export function AdminOrders() {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
         {STATUS_FILTERS.map(({ value, label }) => (
           <button
             key={value}
@@ -176,6 +177,7 @@ export function AdminOrders() {
             {label}
           </button>
         ))}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -188,16 +190,18 @@ export function AdminOrders() {
             <Link
               key={order.id}
               to={`${ADMIN_BASE_PATH}/commandes/${order.id}`}
-              className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm"
+              className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:shadow-sm sm:flex-row sm:items-center sm:gap-4"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
                 <Package className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-slate-900">{order.userName}</p>
                 <p className="truncate text-sm text-slate-500">{order.email}</p>
               </div>
-              <div className="text-right text-sm">
+              </div>
+              <div className="text-left text-sm sm:text-right">
                 <p className="font-semibold text-slate-900">{formatCurrency(order.amount)}</p>
                 <p className="text-slate-500">
                   {ORDER_STATUS_LABELS[normalizeOrderStatus(order.status)] ?? order.status}

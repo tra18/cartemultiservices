@@ -12,6 +12,7 @@ import type { PaymentRequest } from '../../types/merchant'
 import type { Category } from '../../types'
 import { CATEGORY_LABELS } from '../../types'
 import { formatCurrency } from '../../utils/currency'
+import { useResponsiveQrSize } from '../../hooks/useResponsiveQrSize'
 
 export function MerchantCollect() {
   const { currentMerchant, refreshMerchant } = useMerchantAuth()
@@ -20,6 +21,7 @@ export function MerchantCollect() {
   const [activePayment, setActivePayment] = useState<PaymentRequest | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const qrSize = useResponsiveQrSize(220, 0.65)
 
   useEffect(() => {
     if (!activePayment || activePayment.status !== 'pending') return
@@ -117,8 +119,8 @@ export function MerchantCollect() {
           </p>
         </div>
 
-        <div className="mx-auto w-fit rounded-2xl border-4 border-emerald-500 bg-white p-4 shadow-lg">
-          <QRCodeSVG value={qrUrl} size={220} level="M" includeMargin />
+        <div className="mx-auto w-fit max-w-full rounded-2xl border-4 border-emerald-500 bg-white p-3 shadow-lg sm:p-4">
+          <QRCodeSVG value={qrUrl} size={qrSize} level="M" includeMargin />
         </div>
 
         <div className="text-center">

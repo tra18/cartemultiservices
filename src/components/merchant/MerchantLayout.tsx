@@ -1,25 +1,11 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import {
-  ArrowDownToLine,
-  History,
-  Layers,
-  LayoutDashboard,
-  LogOut,
-  QrCode,
-} from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { AppShell } from '../AppShell'
 import { PlatformLogo } from '../PlatformLogo'
 import { PLATFORM_NAME } from '../../constants/brand'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
-
-const navItems = [
-  { to: '/commercant', label: 'Tableau de bord', icon: LayoutDashboard, end: true },
-  { to: '/commercant/encaisser', label: 'Encaisser', icon: QrCode },
-  { to: '/commercant/categories', label: 'Catégories', icon: Layers },
-  { to: '/commercant/retraits', label: 'Retraits', icon: ArrowDownToLine },
-  { to: '/commercant/historique', label: 'Ventes', icon: History },
-]
+import { merchantMobileBar, merchantNavGroups } from '../../navigation/merchantNav'
 
 export function MerchantLayout() {
   const { currentMerchant, logout, refreshMerchant } = useMerchantAuth()
@@ -53,7 +39,13 @@ export function MerchantLayout() {
   )
 
   return (
-    <AppShell header={header} navItems={navItems} accent="emerald" width="app">
+    <AppShell
+      header={header}
+      navGroups={merchantNavGroups}
+      mobileBar={merchantMobileBar}
+      accent="emerald"
+      width="app"
+    >
       <Outlet />
     </AppShell>
   )

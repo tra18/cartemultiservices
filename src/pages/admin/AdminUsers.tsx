@@ -147,7 +147,8 @@ export function AdminUsers() {
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
         {STATUS_FILTERS.map(({ value, label }) => (
           <button
             key={value}
@@ -162,6 +163,7 @@ export function AdminUsers() {
             {label}
           </button>
         ))}
+        </div>
       </div>
 
       {filtered.length === 0 ? (

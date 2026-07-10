@@ -45,6 +45,11 @@ import { AdminOrderDetail } from './pages/admin/AdminOrderDetail'
 import { AdminPrintCard } from './pages/admin/AdminPrintCard'
 import { AdminFinance } from './pages/admin/AdminFinance'
 import { AdminUsers } from './pages/admin/AdminUsers'
+import { AdminCareers } from './pages/admin/AdminCareers'
+import { AdminApplications } from './pages/admin/AdminApplications'
+import { CareersList } from './pages/careers/CareersList'
+import { CareerDetail } from './pages/careers/CareerDetail'
+import { CareerApply } from './pages/careers/CareerApply'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
 import { IdleSessionGuard } from './components/IdleSessionGuard'
 
@@ -76,6 +81,8 @@ export default function App() {
               <Route index element={<AdminOrders />} />
               <Route path="comptes" element={<AdminUsers />} />
               <Route path="finances" element={<AdminFinance />} />
+              <Route path="carrieres" element={<AdminCareers />} />
+              <Route path="candidatures" element={<AdminApplications />} />
               <Route path="commandes/:orderId" element={<AdminOrderDetail />} />
               <Route path="commandes/:orderId/imprimer" element={<AdminPrintCard />} />
             </Route>
@@ -114,6 +121,9 @@ export default function App() {
 
             {/* Page d'accueil publique */}
             <Route path="/" element={<Home />} />
+            <Route path="/carrieres" element={<CareersList />} />
+            <Route path="/carrieres/:jobId" element={<CareerDetail />} />
+            <Route path="/carrieres/:jobId/postuler" element={<CareerApply />} />
 
             {/* Espace client — routes publiques */}
             <Route
