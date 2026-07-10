@@ -3,6 +3,7 @@ import { Baby, ChevronRight, Mail, Phone, Shield, User } from 'lucide-react'
 import { CardVisual } from '../components/CardVisual'
 import { EnableDigitalCard } from '../components/EnableDigitalCard'
 import { WalletAddSection } from '../components/WalletAddSection'
+import { WalletChargeBanner } from '../components/WalletChargeBanner'
 import { useAuth } from '../context/AuthContext'
 import { maskCardNumber } from '../utils/card'
 import {
@@ -72,6 +73,8 @@ export function Profile() {
 
   return (
     <div className="space-y-6">
+      <WalletChargeBanner />
+
       <div>
         <h2 className="text-xl font-bold text-slate-900">Mon profil</h2>
         <p className="mt-1 text-sm text-slate-500">Carte numérique, physique et portefeuille mobile</p>

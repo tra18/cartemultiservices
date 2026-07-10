@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AlertCircle, CreditCard, Fuel, Globe, PlusCircle, QrCode, Shield, Smartphone } from 'lucide-react'
+import { WalletChargeBanner } from '../components/WalletChargeBanner'
 import { CardVisual } from '../components/CardVisual'
 import { TransactionItem } from '../components/TransactionItem'
 import { useAuth } from '../context/AuthContext'
@@ -23,6 +24,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <WalletChargeBanner />
+
       {currentUser?.cardStatus === 'blocked' && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4">
           <div className="flex gap-3">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, LogIn, Store } from 'lucide-react'
 import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
@@ -7,6 +7,8 @@ import { useMerchantAuth } from '../../context/MerchantAuthContext'
 export function MerchantLogin() {
   const { login } = useMerchantAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/commercant'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -19,7 +21,7 @@ export function MerchantLogin() {
       setError(err)
       return false
     }
-    navigate('/commercant', { replace: true })
+    navigate(redirectTo, { replace: true })
     return true
   }
 

@@ -76,8 +76,8 @@ export function WalletAddSection({
           <h3 className="font-semibold text-slate-900">Portefeuille numérique</h3>
           <p className="mt-0.5 text-sm text-slate-500">
             {isDigital
-              ? 'Ajoutez votre carte numérique pour payer sans contact en attendant la carte physique.'
-              : 'Payez en magasin avec votre téléphone, sans sortir la carte physique.'}
+              ? 'Ajoutez votre carte numérique. Présentez le QR code au commerçant pour payer.'
+              : 'Présentez le QR code de votre carte wallet au commerçant pour payer en magasin.'}
           </p>
         </div>
       </div>
@@ -148,8 +148,8 @@ export function WalletAddSection({
       )}
 
       <p className="mt-4 text-xs leading-relaxed text-slate-400">
-        Votre carte multiservice sera disponible pour les paiements sans contact compatibles. Le solde
-        reste synchronisé avec votre compte {PLATFORM_NAME}.
+        Le QR code sur votre carte wallet permet au commerçant de vous identifier. Vous confirmez
+        chaque paiement avec votre code PIN dans l&apos;application {PLATFORM_NAME}.
       </p>
     </section>
   )

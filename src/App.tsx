@@ -24,6 +24,7 @@ import { Recharge } from './pages/Recharge'
 import { Register } from './pages/Register'
 import { ScanPay } from './pages/ScanPay'
 import { MerchantCollect } from './pages/merchant/MerchantCollect'
+import { MerchantWalletScan } from './pages/merchant/MerchantWalletScan'
 import { MerchantDashboard } from './pages/merchant/MerchantDashboard'
 import { MerchantHistory } from './pages/merchant/MerchantHistory'
 import { MerchantLogin } from './pages/merchant/MerchantLogin'
@@ -51,6 +52,7 @@ import { CareersList } from './pages/careers/CareersList'
 import { CareerDetail } from './pages/careers/CareerDetail'
 import { CareerApply } from './pages/careers/CareerApply'
 import { DiasporaRecharge } from './pages/DiasporaRecharge'
+import { WalletPayLanding } from './pages/WalletPayLanding'
 import { FamilyMinors } from './pages/FamilyMinors'
 import { MinorManage } from './pages/MinorManage'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
@@ -117,6 +119,7 @@ export default function App() {
             >
               <Route index element={<MerchantDashboard />} />
               <Route path="encaisser" element={<MerchantCollect />} />
+              <Route path="encaisser-carte" element={<MerchantWalletScan />} />
               <Route path="retraits" element={<MerchantWithdrawals />} />
               <Route path="categories" element={<MerchantCategories />} />
               <Route path="historique" element={<MerchantHistory />} />
@@ -128,6 +131,7 @@ export default function App() {
             <Route path="/carrieres/:jobId" element={<CareerDetail />} />
             <Route path="/carrieres/:jobId/postuler" element={<CareerApply />} />
             <Route path="/recharger-diaspora" element={<DiasporaRecharge />} />
+            <Route path="/wallet-pay/:token" element={<WalletPayLanding />} />
 
             {/* Espace client — routes publiques */}
             <Route

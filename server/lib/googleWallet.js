@@ -1,17 +1,45 @@
 import { GoogleAuth } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
-import { buildCardQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
+import { buildWalletPayQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
+
+export function getGoogleWalletCredentials() {
+  const base64 = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON_BASE64
+  if (base64?.trim()) {
+    try {
+      const raw = Buffer.from(base64.replace(/\s+/g, ''), 'base64').toString('utf-8')
+      return JSON.parse(raw)
+    } catch {
+      throw new Error('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON_BASE64 invalide')
+    }
+  }
+
+  const raw = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON
+  if (!raw?.trim()) {
+    throw new Error('Google Wallet non configuré')
+  }
+
+  try {
+    return JSON.parse(raw)
+  } catch {
+    throw new Error('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON invalide (JSON illisible)')
+  }
+}
 
 function getCredentials() {
-  const raw = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON
-  if (!raw) throw new Error('Google Wallet non configuré')
-  return JSON.parse(raw)
+  return getGoogleWalletCredentials()
+}
+
+export function getGoogleWalletClassId() {
+  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
+  if (!issuerId?.trim()) {
+    throw new Error('GOOGLE_WALLET_ISSUER_ID manquant')
+  }
+  const suffix = process.env.GOOGLE_WALLET_CLASS_SUFFIX ?? 'guinee_multiservices_card'
+  return `${issuerId}.${suffix}`
 }
 
 function getClassId() {
-  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
-  const suffix = process.env.GOOGLE_WALLET_CLASS_SUFFIX ?? 'guinee_multiservices_card'
-  return `${issuerId}.${suffix}`
+  return getGoogleWalletClassId()
 }
 
 async function getAuthClient() {
@@ -55,13 +83,13 @@ async function ensureGenericClass() {
   return classId
 }
 
-export async function createGoogleWalletSaveUrl({ userId, fullName, cardNumber, email }) {
+export async function createGoogleWalletSaveUrl({ userId, fullName, cardNumber, email, walletPayToken }) {
   const credentials = getCredentials()
   const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
   const classId = await ensureGenericClass()
   const objectId = `${issuerId}.gm_${userId.replace(/[^a-zA-Z0-9._-]/g, '_')}`
   const masked = maskCardNumber(cardNumber)
-  const qrUrl = buildCardQrUrl(userId)
+  const qrUrl = buildWalletPayQrUrl(walletPayToken)
   const siteUrl = getSiteUrl()
 
   const claims = {

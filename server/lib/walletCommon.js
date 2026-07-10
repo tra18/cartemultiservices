@@ -10,8 +10,8 @@ export function maskCardNumber(cardNumber) {
   return `•••• •••• •••• ${digits.slice(-4)}`
 }
 
-export function buildCardQrUrl(userId) {
-  return `${getSiteUrl()}/tableau-de-bord?carte=${encodeURIComponent(userId)}`
+export function buildWalletPayQrUrl(token) {
+  return `${getSiteUrl()}/wallet-pay/${encodeURIComponent(token)}`
 }
 
 export function isAppleWalletConfigured() {
@@ -25,7 +25,11 @@ export function isAppleWalletConfigured() {
 }
 
 export function isGoogleWalletConfigured() {
-  return Boolean(process.env.GOOGLE_WALLET_ISSUER_ID && process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON)
+  return Boolean(
+    process.env.GOOGLE_WALLET_ISSUER_ID?.trim() &&
+      (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON?.trim() ||
+        process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON_BASE64?.trim())
+  )
 }
 
 export function parseWalletRequest(req) {

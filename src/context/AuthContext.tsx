@@ -32,6 +32,7 @@ import {
   registerClient,
 } from '../services/clientAuth'
 import { clearUserActivity, markUserActivity } from '../constants/session'
+import { confirmWalletChargeOnServer } from '../services/walletCharge'
 
 function normalizeUser(user: UserAccount): UserAccount {
   return {
@@ -64,6 +65,7 @@ interface AuthContextValue {
     detail?: string
   ) => Promise<boolean>
   payViaQr: (paymentId: string, pin: string) => Promise<{ success: boolean; error?: string }>
+  confirmWalletCharge: (chargeId: string, pin: string) => Promise<{ success: boolean; error?: string }>
   recharge: (amount: number, method: string, pin: string) => Promise<boolean>
   orderCard: (
     data: CardOrderFormData & { needsAddress?: boolean; addressFallback?: string },
@@ -497,6 +499,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true }
   }
 
+  const confirmWalletCharge = async (
+    chargeId: string,
+    pin: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser) return { success: false, error: 'Non connecté' }
+    const cardErr = requireUsableCard()
+    if (cardErr) return { success: false, error: cardErr }
+    const pinErr = await verifyCardPin(pin)
+    if (pinErr) return { success: false, error: pinErr }
+
+    const result = await confirmWalletChargeOnServer(chargeId, pin)
+    if (!result.ok) {
+      if (result.blocked) {
+        sendCardBlockedEmail(currentUser.email, currentUser.fullName)
+      }
+      await refreshCurrentUser()
+      return { success: false, error: result.error ?? 'Paiement échoué' }
+    }
+
+    await refreshCurrentUser()
+    if (result.charge) {
+      sendTransactionAlertEmail(
+        currentUser.email,
+        currentUser.fullName,
+        `Wallet ${result.charge.merchantName}`,
+        result.charge.amount,
+        result.newBalance ?? currentUser.balance - result.charge.amount,
+        false
+      )
+    }
+    return { success: true }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -510,6 +545,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         addTransaction,
         pay,
         payViaQr,
+        confirmWalletCharge,
         recharge,
         orderCard,
         orderReplacementCard,

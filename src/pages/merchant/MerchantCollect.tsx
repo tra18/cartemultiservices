@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { CheckCircle, Copy, RefreshCw, X } from 'lucide-react'
 import { BackToHomeLink } from '../../components/BackToHomeLink'
@@ -224,6 +225,13 @@ export function MerchantCollect() {
           Générer le QR Code
         </button>
 
+        <Link
+          to="/commercant/encaisser-carte"
+          className="flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-white py-3 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+        >
+          Scanner la carte wallet du client
+        </Link>
+
         <BackToHomeLink className="mt-3" />
       </form>
 
@@ -231,8 +239,8 @@ export function MerchantCollect() {
         <p className="font-medium">Comment ça marche ?</p>
         <ol className="mt-2 list-inside list-decimal space-y-1 text-emerald-700">
           <li>Saisissez le montant de la vente</li>
-          <li>Le client scanne le QR code avec son téléphone</li>
-          <li>Il confirme le paiement sur son application</li>
+          <li>Affichez votre QR code, ou scannez la carte wallet du client</li>
+          <li>Le client confirme le paiement avec son code PIN</li>
           <li>L&apos;argent est crédité sur votre solde commerçant</li>
         </ol>
       </div>

@@ -1,7 +1,7 @@
 import forge from 'node-forge'
 import { PKPass } from 'passkit-generator'
 import { getPassIconBuffers } from './walletAssets.js'
-import { buildCardQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
+import { buildWalletPayQrUrl, getSiteUrl, maskCardNumber } from './walletCommon.js'
 
 function decodeBase64Env(value) {
   const cleaned = String(value ?? '').replace(/\s+/g, '')
@@ -94,12 +94,12 @@ function loadAppleCertificates() {
   throw new Error('Certificats Apple Wallet non configurés')
 }
 
-export async function createAppleWalletPass({ userId, fullName, cardNumber, email }) {
+export async function createAppleWalletPass({ userId, fullName, cardNumber, email, walletPayToken }) {
   const certificates = loadAppleCertificates()
   const teamId = process.env.APPLE_TEAM_ID
   const passTypeId = process.env.APPLE_PASS_TYPE_ID
   const masked = maskCardNumber(cardNumber)
-  const qrUrl = buildCardQrUrl(userId)
+  const qrUrl = buildWalletPayQrUrl(walletPayToken)
 
   const pass = new PKPass(
     getPassIconBuffers(),
@@ -153,7 +153,7 @@ export async function createAppleWalletPass({ userId, fullName, cardNumber, emai
       key: 'info',
       label: 'Information',
       value:
-        'Présentez le QR code chez les commerçants partenaires ou ouvrez votre espace client pour payer.',
+        'Présentez ce QR code au commerçant pour payer. Il le scanne, vous confirmez avec votre code PIN dans l\'application.',
     }
   )
 
