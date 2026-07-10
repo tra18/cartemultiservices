@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import {
   ArrowDownToLine,
   Banknote,
@@ -185,6 +186,8 @@ export function AdminFinance() {
             <button type="submit" className="w-full rounded-xl bg-violet-600 py-3 font-semibold text-white hover:bg-violet-700">
               Effectuer le retrait
             </button>
+
+            <BackToHomeLink className="mt-3" />
           </form>
         </section>
 

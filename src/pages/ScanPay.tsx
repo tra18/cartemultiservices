@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { useResponsiveQrSize } from '../hooks/useResponsiveQrSize'
 import { useNavigate } from 'react-router-dom'
 import { Html5Qrcode } from 'html5-qrcode'
@@ -150,6 +151,8 @@ export function ScanPay() {
           >
             Continuer
           </button>
+
+          <BackToHomeLink className="mt-3" />
         </form>
       )}
 

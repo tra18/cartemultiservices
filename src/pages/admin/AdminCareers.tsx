@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, Briefcase, Pencil, Plus, Trash2 } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import {
   adminCreateJob,
   adminDeleteJob,
@@ -242,6 +243,8 @@ export function AdminCareers() {
               Annuler
             </button>
           </div>
+
+          <BackToHomeLink className="mt-3" />
         </form>
       )}
 

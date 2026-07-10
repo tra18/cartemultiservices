@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Fuel } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { getMerchantsForCategory } from '../data/merchants'
 import { PAYMENT_FAMILIES, ALL_CATEGORIES, getCategoryMeta } from '../data/categories'
 import { useCard } from '../context/CardContext'
@@ -212,6 +213,8 @@ export function Pay() {
         >
           Confirmer le paiement
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
       {PinModal}
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowDownToLine, CheckCircle, Clock } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
 import { requestMerchantWithdrawalOnServer, upsertFinanceMerchant } from '../../services/financeServer'
 import type { WithdrawalMethod } from '../../types/merchant'
@@ -138,6 +139,8 @@ export function MerchantWithdrawals() {
           <ArrowDownToLine className="h-5 w-5" />
           Demander le retrait
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
 
       <section>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BackToHomeLink } from './BackToHomeLink'
 import { Lock, X } from 'lucide-react'
 
 interface CardPinModalProps {
@@ -81,6 +82,10 @@ export function CardPinModal({
           >
             Confirmer
           </button>
+
+          <div className="mt-3 flex justify-center">
+            <BackToHomeLink variant="link" />
+          </div>
         </form>
       </div>
     </div>

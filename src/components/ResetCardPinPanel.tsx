@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { KeyRound, Mail } from 'lucide-react'
+import { BackToHomeLink } from './BackToHomeLink'
 import { useAuth } from '../context/AuthContext'
 import { pinsMatch } from '../utils/cardPin'
 
@@ -176,6 +177,8 @@ export function ResetCardPinPanel() {
           >
             Annuler
           </button>
+
+          <BackToHomeLink className="mt-2" />
         </form>
       )}
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { CheckCircle, Copy, RefreshCw, X } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
 import {
   cancelPaymentRequest,
@@ -222,6 +223,8 @@ export function MerchantCollect() {
         >
           Générer le QR Code
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
 
       <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">

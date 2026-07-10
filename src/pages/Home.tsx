@@ -6,7 +6,6 @@ import {
   ChevronRight,
   CreditCard,
   Fuel,
-  Globe,
   Hospital,
   Lock,
   Mail,
@@ -22,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { HomeNavMenu } from '../components/HomeNavMenu'
+import { DiasporaPromoSection } from '../components/DiasporaPromoSection'
 import { PlatformLogo } from '../components/PlatformLogo'
 import { LoginModal } from '../components/LoginModal'
 import {
@@ -92,13 +92,6 @@ const SERVICES: ServiceItem[] = [
     icon: Pill,
     title: 'Pharmacies',
     description: 'Achetez vos médicaments sans espèces chez les pharmacies agréées.',
-  },
-  {
-    icon: Globe,
-    title: 'Recharge diaspora',
-    description: 'Créditez une carte en Guinée depuis l’étranger par carte bancaire internationale.',
-    href: '/recharger-diaspora',
-    cta: 'Recharger maintenant',
   },
 ]
 
@@ -429,6 +422,8 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      <DiasporaPromoSection variant="home" />
 
       {/* Editorial band */}
       <section className="bg-stone-900 py-24 text-white lg:py-28">

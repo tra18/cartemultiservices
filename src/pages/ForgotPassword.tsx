@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Mail } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { sendPasswordReminderEmail } from '../services/emailService'
 import { normalizeEmail } from '../utils/validation'
 
@@ -70,6 +71,7 @@ export function ForgotPassword() {
     <AuthLayout
       title="Mot de passe oublié"
       subtitle="Rappel de votre identifiant de connexion"
+      showHomeButton={false}
     >
       <p className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
         Si vous avez commandé une carte, votre compte a été créé à ce moment-là. Votre mot de passe
@@ -103,6 +105,8 @@ export function ForgotPassword() {
           <Mail className="h-5 w-5" />
           Recevoir un rappel par email
         </button>
+
+        <BackToHomeLink className="mt-2" />
       </form>
 
       <div className="mt-6 space-y-3 text-center text-sm">

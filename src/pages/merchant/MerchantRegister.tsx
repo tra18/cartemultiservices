@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Store, UserPlus } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { PaymentMethodPicker } from '../../components/PaymentMethodPicker'
 import { getPaymentMethodLabel, type PaymentMethodId } from '../../data/paymentMethods'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
@@ -232,6 +233,8 @@ export function MerchantRegister() {
             {step === 1 ? 'Continuer' : `Payer ${formatCurrency(registrationTotal)}`}
           </button>
         </div>
+
+        <BackToHomeLink className="mt-3" />
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-600">

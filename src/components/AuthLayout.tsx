@@ -1,15 +1,18 @@
 import { Link } from 'react-router-dom'
 import { PlatformLogo } from './PlatformLogo'
+import { BackToHomeLink } from './BackToHomeLink'
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../constants/brand'
 
 export function AuthLayout({
   children,
   title,
   subtitle,
+  showHomeButton = true,
 }: {
   children: React.ReactNode
   title: string
   subtitle: string
+  showHomeButton?: boolean
 }) {
   return (
     <div className="page-container-narrow flex flex-col">
@@ -22,6 +25,11 @@ export function AuthLayout({
           <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
         </div>
         {children}
+        {showHomeButton && (
+          <div className="mt-6">
+            <BackToHomeLink />
+          </div>
+        )}
       </div>
       <p className="pb-6 text-center text-xs text-slate-400">
         {PLATFORM_NAME} · {PLATFORM_TAGLINE}

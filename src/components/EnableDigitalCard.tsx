@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Smartphone, Sparkles } from 'lucide-react'
+import { BackToHomeLink } from './BackToHomeLink'
 import { validateCardPin } from '../utils/cardPin'
 
 interface EnableDigitalCardProps {
@@ -87,6 +88,8 @@ export function EnableDigitalCard({ onEnable }: EnableDigitalCardProps) {
           <Smartphone className="h-5 w-5" />
           {loading ? 'Activation…' : 'Activer ma carte numérique'}
         </button>
+
+        <BackToHomeLink className="mt-2" />
       </form>
 
       <p className="mt-3 text-xs text-slate-500">

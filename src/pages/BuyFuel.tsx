@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle, Fuel } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { useCard } from '../context/CardContext'
 import {
   calculateFuelAmount,
@@ -208,6 +209,8 @@ export function BuyFuel() {
           <Fuel className="h-5 w-5" />
           Payer {total > 0 ? formatCurrency(total) : 'le carburant'}
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
       {PinModal}
     </div>

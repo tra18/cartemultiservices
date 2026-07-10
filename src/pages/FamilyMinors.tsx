@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Baby, ChevronRight, Plus, Users } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { createMinorProfile, fetchFamilyMinors } from '../services/familyServer'
 import type { UserAccount } from '../types/auth'
 import { formatCurrency } from '../utils/currency'
@@ -119,6 +120,8 @@ export function FamilyMinors() {
               Annuler
             </button>
           </div>
+
+          <BackToHomeLink className="mt-3" />
         </form>
       )}
 

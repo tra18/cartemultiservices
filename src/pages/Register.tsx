@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CreditCard } from 'lucide-react'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { formatCurrency } from '../utils/currency'
 import { CARD_PRICE } from '../utils/pricing'
 
@@ -9,6 +10,7 @@ export function Register() {
     <AuthLayout
       title="Obtenir une carte"
       subtitle="La carte physique est obligatoire pour utiliser le service"
+      showHomeButton={false}
     >
       <div className="space-y-4 text-center">
         <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
@@ -32,6 +34,8 @@ export function Register() {
             Se connecter
           </Link>
         </p>
+
+        <BackToHomeLink className="mt-4" />
       </div>
     </AuthLayout>
   )

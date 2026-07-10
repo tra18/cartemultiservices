@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { CareersPublicShell } from '../../components/careers/CareersPublicShell'
 import { fetchPublishedJob, submitJobApplication } from '../../services/careersServer'
 import type { JobListing } from '../../types/career'
@@ -207,6 +208,8 @@ export function CareerApply() {
           >
             {submitting ? 'Envoi en cours…' : 'Envoyer ma candidature'}
           </button>
+
+          <BackToHomeLink className="mt-3" />
 
           <p className="text-center text-xs text-stone-500">
             En envoyant ce formulaire, vous acceptez que vos données soient traitées dans le cadre

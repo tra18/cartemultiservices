@@ -42,6 +42,7 @@ export function Login() {
     <AuthLayout
       title="Connexion"
       subtitle="Connectez-vous ou commandez votre carte physique"
+      showHomeButton={false}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -106,6 +107,8 @@ export function Login() {
           <LogIn className="h-5 w-5" />
           {loading ? 'Connexion...' : 'Se connecter'}
         </button>
+
+        <BackToHomeLink className="mt-2" />
       </form>
 
       <div className="mt-6 space-y-4 text-center text-sm">
@@ -129,8 +132,6 @@ export function Login() {
             Créer un compte
           </Link>
         </p>
-
-        <BackToHomeLink />
       </div>
     </AuthLayout>
   )

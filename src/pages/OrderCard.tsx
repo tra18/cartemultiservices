@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle, CreditCard, Eye, EyeOff, KeyRound, Lock, Mail, Package, Shield, UserPlus } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { PaymentMethodPicker } from '../components/PaymentMethodPicker'
 import { TurnstileField } from '../components/TurnstileField'
 import { DELIVERY_OPTIONS } from '../data/deliveryMethods'
@@ -700,6 +701,8 @@ export function OrderCard() {
             )}
           </button>
         </div>
+
+        <BackToHomeLink className="mt-3" />
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-600">

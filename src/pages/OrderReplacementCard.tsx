@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle, CreditCard, Lock, Package, ShieldOff } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { PaymentMethodPicker } from '../components/PaymentMethodPicker'
 import { DELIVERY_OPTIONS } from '../data/deliveryMethods'
 import { getPaymentMethodLabel, PAYMENT_METHODS, type PaymentMethodId } from '../data/paymentMethods'
@@ -275,6 +276,8 @@ export function OrderReplacementCard() {
           <Lock className="h-4 w-4" />
           {submitting ? 'Traitement…' : `Payer ${formatCurrency(replacementPrice)}`}
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
     </div>
   )

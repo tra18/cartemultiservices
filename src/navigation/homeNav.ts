@@ -22,7 +22,8 @@ export const HOME_NAV_GROUPS: HomeNavGroup[] = [
       { href: '#services', label: 'Nos services' },
       { href: '#parcours', label: 'Parcours client' },
       { href: '#commercants', label: 'Devenir partenaire' },
-      { href: '/recharger-diaspora', label: 'Recharge diaspora', external: true },
+      { href: '#diaspora', label: 'Recharge diaspora' },
+      { href: '/recharger-diaspora', label: 'Envoyer maintenant', external: true },
     ],
   },
   {

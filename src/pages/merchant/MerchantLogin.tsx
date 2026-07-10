@@ -91,6 +91,8 @@ export function MerchantLogin() {
             <LogIn className="h-5 w-5" />
             Se connecter
           </button>
+
+          <BackToHomeLink className="mt-2" />
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">
@@ -105,10 +107,6 @@ export function MerchantLogin() {
             ← Retour espace client
           </Link>
         </p>
-
-        <div className="mt-4">
-          <BackToHomeLink />
-        </div>
       </div>
     </div>
   )

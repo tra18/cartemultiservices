@@ -62,11 +62,9 @@ export function AdminLogin() {
           <Shield className="h-5 w-5" />
           Connexion admin
         </button>
-      </form>
 
-      <div className="mt-6">
-        <BackToHomeLink />
-      </div>
+        <BackToHomeLink className="mt-2" />
+      </form>
     </div>
   )
 }

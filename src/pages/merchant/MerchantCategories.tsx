@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Layers, PlusCircle } from 'lucide-react'
+import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { PaymentMethodPicker } from '../../components/PaymentMethodPicker'
 import { getPaymentMethodLabel, type PaymentMethodId } from '../../data/paymentMethods'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
@@ -124,6 +125,8 @@ export function MerchantCategories() {
             <PlusCircle className="h-5 w-5" />
             Payer et ajouter la catégorie
           </button>
+
+          <BackToHomeLink className="mt-3" />
         </form>
       )}
     </div>

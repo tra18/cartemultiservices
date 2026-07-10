@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { PAYMENT_METHODS } from '../data/paymentMethods'
 import { useAuth } from '../context/AuthContext'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { useCard } from '../context/CardContext'
 import { useCardPinGate } from '../hooks/useCardPinGate'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
@@ -197,6 +198,8 @@ export function Recharge() {
         >
           Recharger {fmt(selectedAmount || 0)}
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
       {PinModal}
     </div>

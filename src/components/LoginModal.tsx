@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Eye, EyeOff, LogIn, X } from 'lucide-react'
+import { BackToHomeLink } from './BackToHomeLink'
 import { useAuth } from '../context/AuthContext'
 import { PLATFORM_HERO_IMAGE, PLATFORM_TAGLINE } from '../constants/brand'
 
@@ -171,6 +172,10 @@ export function LoginModal({ open, onClose, onSuccess }: LoginModalProps) {
               <LogIn className="h-5 w-5" />
               {loading ? 'Connexion…' : 'Se connecter'}
             </button>
+
+            <div className="flex justify-center pt-2">
+              <BackToHomeLink variant="link" />
+            </div>
           </form>
 
           <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-600">

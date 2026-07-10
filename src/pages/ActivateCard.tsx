@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, CreditCard, KeyRound, Mail, QrCode } from 'lucide-react'
+import { BackToHomeLink } from '../components/BackToHomeLink'
 import { useAuth } from '../context/AuthContext'
 import { getCardOrderByToken, getCardOrderByUserId, hydrateMyOrderFromServer } from '../store/orderStore'
 import { isCardActive, resolveCardStatus } from '../utils/cardStatus'
@@ -227,6 +228,8 @@ export function ActivateCard() {
         >
           {submitting ? 'Activation…' : 'Activer ma carte'}
         </button>
+
+        <BackToHomeLink className="mt-3" />
       </form>
     </div>
   )
