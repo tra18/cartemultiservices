@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Bus,
-  CheckCircle2,
+  ChevronRight,
   CreditCard,
   Fuel,
+  Lock,
   Mail,
   QrCode,
   Shield,
@@ -18,6 +19,7 @@ import { PlatformLogo } from '../components/PlatformLogo'
 import { LoginModal } from '../components/LoginModal'
 import {
   CLIENT_DASHBOARD_PATH,
+  PLATFORM_HERO_IMAGE,
   PLATFORM_NAME,
   PLATFORM_TAGLINE,
   SUPPORT_EMAIL,
@@ -26,62 +28,68 @@ import { useAuth } from '../context/AuthContext'
 import { CARD_PRICE } from '../utils/pricing'
 import { formatCurrency } from '../utils/currency'
 
+const NAV_LINKS = [
+  { href: '#services', label: 'Services' },
+  { href: '#parcours', label: 'Parcours client' },
+  { href: '#commercants', label: 'Commerçants' },
+]
+
 const SERVICES = [
   {
     icon: Fuel,
-    title: 'Stations-service',
-    description: 'Payez votre carburant sans espèces, en quelques secondes.',
+    title: 'Carburant',
+    description: 'Réglez à la station en quelques secondes, sans espèces ni attente.',
   },
   {
     icon: UtensilsCrossed,
     title: 'Restaurants',
-    description: 'Réglez vos repas chez les partenaires du réseau.',
+    description: 'Payez chez les établissements partenaires du réseau national.',
   },
   {
     icon: Bus,
     title: 'Transport',
-    description: 'Tickets et déplacements simplifiés au quotidien.',
+    description: 'Simplifiez tickets, courses et déplacements du quotidien.',
   },
   {
     icon: ShoppingCart,
-    title: 'Courses & shopping',
-    description: 'Achats du quotidien avec un solde centralisé.',
+    title: 'Courses',
+    description: 'Centralisez vos achats avec un solde unique et traçable.',
   },
   {
     icon: QrCode,
     title: 'Paiement QR',
-    description: 'Scannez, validez, c’est payé — rapide et sécurisé.',
+    description: 'Scannez, confirmez avec votre PIN — paiement instantané.',
   },
   {
     icon: Smartphone,
     title: 'Carte numérique',
-    description: 'Utilisez votre carte en attendant la livraison physique.',
+    description: 'Activez une carte provisoire en attendant la livraison physique.',
   },
 ]
 
 const STEPS = [
   {
     step: '01',
-    title: 'Commandez votre carte',
-    description: 'Créez votre compte en ligne et réglez les frais d’émission en toute sécurité.',
+    title: 'Ouvrez votre compte',
+    description: 'Commandez en ligne et créez vos identifiants sécurisés en quelques minutes.',
   },
   {
     step: '02',
-    title: 'Recevez & activez',
-    description: 'À réception, activez votre carte avec le code envoyé par email.',
+    title: 'Activez votre carte',
+    description: 'Recevez votre carte, puis validez l’activation avec le code envoyé par email.',
   },
   {
     step: '03',
-    title: 'Payez partout',
-    description: 'Rechargez, scannez et payez chez tous les commerçants partenaires.',
+    title: 'Payez en confiance',
+    description: 'Rechargez, scannez et réglez chez l’ensemble des commerçants agréés.',
   },
 ]
 
-const TRUST_POINTS = [
-  'Paiements sécurisés',
-  'Réseau de commerçants en expansion',
-  'Support client dédié',
-  'Conçu pour la Guinée',
+const METRICS = [
+  { value: formatCurrency(CARD_PRICE), label: 'Émission carte' },
+  { value: 'QR', label: 'Paiement instantané' },
+  { value: 'PIN', label: 'Sécurité renforcée' },
+  { value: 'GNF', label: 'Monnaie locale' },
 ]
 
 export function Home() {
@@ -89,247 +97,340 @@ export function Home() {
   const navigate = useNavigate()
   const [loginOpen, setLoginOpen] = useState(false)
 
-  const openLogin = () => setLoginOpen(true)
+  const primaryCta = isAuthenticated ? CLIENT_DASHBOARD_PATH : '/commander-carte'
+  const primaryLabel = isAuthenticated ? 'Mon espace client' : 'Commander ma carte'
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-stone-900">
       <LoginModal
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
         onSuccess={() => navigate(CLIENT_DASHBOARD_PATH)}
       />
+
       {/* Navigation */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm safe-top">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur-md safe-top">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 py-4 lg:px-10">
           <Link to="/" className="flex min-w-0 items-center gap-3">
             <PlatformLogo size="sm" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-900 sm:text-base">{PLATFORM_NAME}</p>
-              <p className="hidden text-xs text-slate-500 sm:block">{PLATFORM_TAGLINE}</p>
+            <div className="hidden min-w-0 sm:block">
+              <p className="truncate text-sm font-semibold tracking-tight text-stone-900">
+                {PLATFORM_NAME}
+              </p>
+              <p className="truncate text-[11px] uppercase tracking-[0.18em] text-stone-500">
+                {PLATFORM_TAGLINE}
+              </p>
             </div>
           </Link>
-          <nav className="flex items-center gap-1 sm:gap-2">
+
+          <nav className="hidden items-center gap-8 lg:flex">
+            {NAV_LINKS.map(({ href, label }) => (
+              <a
+                key={href}
+                href={href}
+                className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/commercant/connexion"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 sm:inline-flex"
+              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 md:inline-flex"
             >
-              Commerçant
+              Espace commerçant
             </Link>
             {!isAuthenticated && (
               <button
                 type="button"
-                onClick={openLogin}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setLoginOpen(true)}
+                className="rounded-full px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
               >
                 Connexion
               </button>
             )}
             <Link
-              to={isAuthenticated ? CLIENT_DASHBOARD_PATH : '/commander-carte'}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 sm:px-4"
+              to={primaryCta}
+              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800 sm:px-5"
             >
-              {isAuthenticated ? 'Mon espace' : 'Commander'}
+              {primaryLabel}
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="border-b border-slate-200">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-24">
-          <div>
-            <p className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-sm font-medium text-slate-600">
-              La carte multiservice de référence en Guinée
+      <section className="relative overflow-hidden border-b border-stone-200">
+        <div className="absolute inset-0">
+          <img
+            src={PLATFORM_HERO_IMAGE}
+            alt=""
+            className="h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/80 to-stone-950/40" />
+        </div>
+
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-12 lg:items-end lg:px-10 lg:py-28">
+          <div className="lg:col-span-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-stone-300">
+              Services financiers · Guinée
             </p>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Une carte.
-              <span className="block text-slate-600">Tous vos services.</span>
+            <h1 className="mt-6 font-[family-name:var(--font-display)] text-5xl font-semibold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              La référence du paiement multiservice en Guinée.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-              {PLATFORM_NAME} simplifie vos paiements au quotidien : carburant, restaurants,
-              transport, courses et plus encore — avec une seule carte rechargeable.
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-stone-300 sm:text-xl">
+              {PLATFORM_NAME} regroupe carburant, restauration, transport et courses dans une
+              carte rechargeable, sécurisée et pensée pour le quotidien.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 to="/commander-carte"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100"
               >
-                <CreditCard className="h-5 w-5" />
-                Commander ma carte — {formatCurrency(CARD_PRICE)}
+                <CreditCard className="h-4 w-4" />
+                Commander — {formatCurrency(CARD_PRICE)}
               </Link>
               {isAuthenticated ? (
                 <Link
                   to={CLIENT_DASHBOARD_PATH}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Accéder à mon espace
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               ) : (
                 <button
                   type="button"
-                  onClick={openLogin}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50"
+                  onClick={() => setLoginOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
-                  J’ai déjà un compte
+                  Connexion client
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               )}
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2">
-              {TRUST_POINTS.map((point) => (
-                <li key={point} className="flex items-center gap-2 text-sm text-slate-600">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-slate-900" />
-                  {point}
-                </li>
-              ))}
-            </ul>
           </div>
 
-          {/* Carte visuelle */}
-          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <div className="overflow-hidden rounded-2xl bg-slate-900 p-6 shadow-xl sm:p-8">
-              <div className="mb-8 flex items-start justify-between">
+          <div className="lg:col-span-5">
+            <div className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur-md sm:p-8">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Multiservice
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-300">
+                    Carte multiservice
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-white">{PLATFORM_NAME}</p>
+                  <p className="mt-2 font-[family-name:var(--font-display)] text-3xl text-white">
+                    {PLATFORM_NAME}
+                  </p>
                 </div>
-                <div className="rounded-lg bg-white/10 p-2">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
+                <Shield className="h-8 w-8 shrink-0 text-white/80" />
               </div>
-              <p className="mb-8 font-mono text-xl tracking-[0.25em] text-white/90 sm:text-2xl">
-                •••• •••• •••• 4829
+              <p className="mt-8 font-mono text-xl tracking-[0.22em] text-white/90">
+                2121 •••• •••• 4829
               </p>
-              <div className="flex items-end justify-between">
+              <div className="mt-8 flex items-end justify-between border-t border-white/15 pt-6">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-slate-400">Titulaire</p>
-                  <p className="font-medium text-white">Votre nom</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-stone-400">Titulaire</p>
+                  <p className="mt-1 text-sm font-medium text-white">Client Guinée Multiservices</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs uppercase tracking-wider text-slate-400">Solde</p>
-                  <p className="text-2xl font-bold text-white">250 000 GNF</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-stone-400">Solde</p>
+                  <p className="mt-1 text-2xl font-semibold text-white">250 000 GNF</p>
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-4 -left-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-lg sm:-left-6">
-              <p className="text-xs text-slate-500">Paiement validé</p>
-              <p className="font-semibold text-slate-900">Station Total — 85 000 GNF</p>
-            </div>
           </div>
+        </div>
+      </section>
+
+      {/* Metrics */}
+      <section className="border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-stone-200 lg:grid-cols-4">
+          {METRICS.map(({ value, label }) => (
+            <div key={label} className="px-5 py-8 text-center sm:px-8">
+              <p className="font-[family-name:var(--font-display)] text-3xl font-semibold text-stone-900 sm:text-4xl">
+                {value}
+              </p>
+              <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-stone-500">
+                {label}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Services */}
-      <section className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Tout ce dont vous avez besoin</h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Une solution complète pour vos dépenses quotidiennes, sans multiplier les cartes ni
-              les applications.
+      <section id="services" className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-5 lg:px-10">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+              Nos capacités
+            </p>
+            <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
+              Un écosystème de paiement complet
+            </h2>
+            <p className="mt-5 text-lg leading-relaxed text-stone-600">
+              Une infrastructure unique pour couvrir vos besoins essentiels, avec la rigueur d’un
+              établissement financier et la simplicité d’une application moderne.
             </p>
           </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+          <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-stone-200 bg-stone-200 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map(({ icon: Icon, title, description }) => (
-              <div
+              <article
                 key={title}
-                className="rounded-xl border border-slate-200 bg-white p-6 transition hover:border-slate-300 hover:shadow-sm"
+                className="group bg-white p-8 transition hover:bg-stone-50 lg:p-10"
               >
-                <div className="mb-4 inline-flex rounded-lg bg-slate-100 p-3">
-                  <Icon className="h-6 w-6 text-slate-900" />
+                <div className="mb-6 inline-flex rounded-full border border-stone-200 p-3 text-stone-900 transition group-hover:border-stone-900">
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
-              </div>
+                <h3 className="text-xl font-semibold text-stone-900">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-stone-600">{description}</p>
+                <span className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-stone-900 opacity-0 transition group-hover:opacity-100">
+                  En savoir plus
+                  <ChevronRight className="h-4 w-4" />
+                </span>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Comment ça marche */}
-      <section className="py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Comment ça marche ?</h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Trois étapes simples pour rejoindre le réseau {PLATFORM_NAME}.
+      {/* Editorial band */}
+      <section className="bg-stone-900 py-24 text-white lg:py-28">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:items-center lg:px-10">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
+              Notre conviction
             </p>
+            <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-semibold leading-tight sm:text-5xl">
+              Simplifier les paiements, structurer la confiance.
+            </h2>
           </div>
+          <div className="space-y-6 text-lg leading-relaxed text-stone-300">
+            <p>
+              {PLATFORM_NAME} accompagne particuliers et commerçants avec des outils fiables :
+              carte physique et numérique, paiement QR, contrôle PIN et suivi des opérations.
+            </p>
+            <div className="flex flex-wrap gap-6 text-sm text-stone-400">
+              <span className="inline-flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Chiffrement & session sécurisée
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Vérification anti-fraude
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Parcours */}
+      <section id="parcours" className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-5 lg:px-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+                Parcours client
+              </p>
+              <h2 className="mt-4 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
+                Trois étapes pour rejoindre le réseau
+              </h2>
+            </div>
+            <Link
+              to="/commander-carte"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-stone-900 hover:underline"
+            >
+              Démarrer ma commande
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
           <div className="mt-14 grid gap-8 lg:grid-cols-3">
             {STEPS.map(({ step, title, description }) => (
-              <div key={step} className="rounded-xl border border-slate-200 bg-white p-8">
-                <span className="text-4xl font-bold text-slate-200">{step}</span>
-                <h3 className="mt-4 text-xl font-semibold text-slate-900">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">{description}</p>
+              <div key={step} className="border-t-2 border-stone-900 pt-8">
+                <span className="text-sm font-semibold tracking-[0.2em] text-stone-400">{step}</span>
+                <h3 className="mt-4 text-2xl font-semibold text-stone-900">{title}</h3>
+                <p className="mt-4 text-sm leading-relaxed text-stone-600">{description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Commander */}
-      <section className="bg-slate-900 py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">Prêt à simplifier vos paiements ?</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-            Rejoignez des milliers d’utilisateurs qui font confiance à {PLATFORM_NAME} pour leurs
-            dépenses du quotidien en Guinée.
-          </p>
+      {/* CTA */}
+      <section className="border-y border-stone-200 bg-stone-50 py-20">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-5 lg:flex-row lg:items-center lg:px-10">
+          <div className="max-w-2xl">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl font-semibold text-stone-900 sm:text-5xl">
+              Prêt à passer au paiement nouvelle génération ?
+            </h2>
+            <p className="mt-4 text-lg text-stone-600">
+              Commandez votre carte dès aujourd’hui et accédez à un réseau conçu pour la Guinée.
+            </p>
+          </div>
           <Link
             to="/commander-carte"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-8 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-100"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-stone-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-stone-800"
           >
-            Commander ma carte maintenant
-            <ArrowRight className="h-5 w-5" />
+            Commander ma carte
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
 
       {/* Commerçants */}
-      <section className="border-b border-slate-200 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section id="commercants" className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-5 lg:px-10">
+          <div className="overflow-hidden rounded-3xl bg-stone-900 text-white">
             <div className="grid lg:grid-cols-2">
-              <div className="p-8 sm:p-12">
-                <div className="inline-flex rounded-lg bg-slate-100 p-3 text-slate-900">
+              <div className="p-10 sm:p-14 lg:p-16">
+                <div className="inline-flex rounded-full border border-white/20 p-3">
                   <Store className="h-6 w-6" />
                 </div>
-                <h2 className="mt-6 text-3xl font-bold text-slate-900">Vous êtes commerçant ?</h2>
-                <p className="mt-4 leading-relaxed text-slate-600">
-                  Acceptez les paiements {PLATFORM_NAME}, gérez vos encaissements et développez
-                  votre activité au sein d’un réseau fiable et moderne.
+                <h2 className="mt-8 font-[family-name:var(--font-display)] text-4xl font-semibold sm:text-5xl">
+                  Vous êtes commerçant ?
+                </h2>
+                <p className="mt-5 max-w-lg text-lg leading-relaxed text-stone-300">
+                  Intégrez le réseau {PLATFORM_NAME}, encaissez par QR et pilotez votre activité
+                  depuis un espace professionnel dédié.
                 </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                   <Link
                     to="/commercant/inscription"
-                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+                    className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100"
                   >
                     Devenir partenaire
                   </Link>
                   <Link
                     to="/commercant/connexion"
-                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-50"
+                    className="inline-flex items-center justify-center rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
                   >
-                    Espace commerçant
+                    Connexion commerçant
                   </Link>
                 </div>
               </div>
-              <div className="flex items-center justify-center border-t border-slate-200 bg-slate-50 p-8 sm:p-12 lg:border-l lg:border-t-0">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-center border-t border-white/10 bg-stone-950/50 p-10 sm:p-14 lg:border-l lg:border-t-0">
+                <div className="grid w-full max-w-md grid-cols-2 gap-4">
                   {[
-                    { value: 'QR', label: 'Paiement instantané' },
+                    { value: '100%', label: 'Paiements sécurisés' },
                     { value: '24/7', label: 'Suivi des ventes' },
-                    { value: '100%', label: 'Sécurisé' },
+                    { value: 'QR', label: 'Encaissement rapide' },
                     { value: 'GNF', label: 'Monnaie locale' },
                   ].map(({ value, label }) => (
                     <div
                       key={label}
-                      className="rounded-xl border border-slate-200 bg-white p-5 text-center"
+                      className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center"
                     >
-                      <p className="text-2xl font-bold text-slate-900">{value}</p>
-                      <p className="mt-1 text-xs text-slate-500">{label}</p>
+                      <p className="font-[family-name:var(--font-display)] text-3xl font-semibold">
+                        {value}
+                      </p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
+                        {label}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -340,54 +441,98 @@ export function Home() {
       </section>
 
       {/* Contact */}
-      <section className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center sm:p-12">
-            <div className="mx-auto inline-flex rounded-full bg-slate-100 p-4 text-slate-900">
-              <Mail className="h-8 w-8" />
+      <section className="border-t border-stone-200 bg-stone-50 py-20">
+        <div className="mx-auto max-w-7xl px-5 lg:px-10">
+          <div className="flex flex-col items-start justify-between gap-8 rounded-3xl border border-stone-200 bg-white p-10 sm:flex-row sm:items-center sm:p-12">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+                Assistance
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-semibold text-stone-900 sm:text-4xl">
+                Une équipe à votre écoute
+              </h2>
+              <p className="mt-3 max-w-xl text-stone-600">
+                Questions sur votre commande, votre carte ou votre compte — contactez notre support.
+              </p>
             </div>
-            <h2 className="mt-6 text-2xl font-bold text-slate-900 sm:text-3xl">Besoin d’aide ?</h2>
-            <p className="mt-3 text-slate-600">
-              Notre équipe support est à votre disposition pour toute question sur votre carte,
-              votre compte ou votre commande.
-            </p>
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-stone-800"
             >
-              <Mail className="h-5 w-5" />
+              <Mail className="h-4 w-4" />
               {SUPPORT_EMAIL}
             </a>
-            <p className="mt-4 text-sm text-slate-500">
-              Contact à joindre pour le support client et les demandes d’assistance.
-            </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row sm:px-6">
-          <PlatformLogo size="sm" showName />
-          <p className="text-center text-sm text-slate-500">
-            © {new Date().getFullYear()} {PLATFORM_NAME}. {PLATFORM_TAGLINE}.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-slate-600">
-            {!isAuthenticated && (
-              <button
-                type="button"
-                onClick={openLogin}
-                className="hover:text-slate-900"
-              >
-                Connexion
-              </button>
-            )}
-            <Link to="/commander-carte" className="hover:text-slate-900">
-              Commander
-            </Link>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-slate-900">
-              Contact
-            </a>
+      <footer className="border-t border-stone-200 bg-white py-14">
+        <div className="mx-auto max-w-7xl px-5 lg:px-10">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="sm:col-span-2">
+              <PlatformLogo size="sm" showName />
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-stone-500">
+                {PLATFORM_TAGLINE}. Services de paiement multiservice pour particuliers et
+                commerçants en République de Guinée.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Clients
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-stone-600">
+                <li>
+                  <Link to="/commander-carte" className="hover:text-stone-900">
+                    Commander une carte
+                  </Link>
+                </li>
+                {!isAuthenticated && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setLoginOpen(true)}
+                      className="hover:text-stone-900"
+                    >
+                      Connexion
+                    </button>
+                  </li>
+                )}
+                {isAuthenticated && (
+                  <li>
+                    <Link to={CLIENT_DASHBOARD_PATH} className="hover:text-stone-900">
+                      Mon espace
+                    </Link>
+                  </li>
+                )}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Partenaires
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-stone-600">
+                <li>
+                  <Link to="/commercant/inscription" className="hover:text-stone-900">
+                    Devenir commerçant
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/commercant/connexion" className="hover:text-stone-900">
+                    Espace commerçant
+                  </Link>
+                </li>
+                <li>
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-stone-900">
+                    Contact
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-stone-200 pt-8 text-sm text-stone-500 sm:flex-row">
+            <p>© {new Date().getFullYear()} {PLATFORM_NAME}. Tous droits réservés.</p>
+            <p className="text-xs uppercase tracking-[0.16em]">Conçu pour la Guinée</p>
           </div>
         </div>
       </footer>
