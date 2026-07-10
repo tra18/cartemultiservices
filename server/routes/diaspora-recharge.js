@@ -15,7 +15,14 @@ const MAX_LOG = 300
 const MAX_AMOUNT = 5_000_000
 const MIN_AMOUNT = 10_000
 
-const PAYMENT_METHODS = new Set(['visa', 'mastercard', 'bank-transfer'])
+const PAYMENT_METHODS = new Set(['visa', 'mastercard', 'paypal', 'bank-transfer'])
+
+const PAYMENT_METHOD_LABELS = {
+  visa: 'Visa diaspora',
+  mastercard: 'Mastercard diaspora',
+  paypal: 'PayPal diaspora',
+  'bank-transfer': 'Virement diaspora',
+}
 
 function isValidPayload(body) {
   if (!body || typeof body !== 'object') return false
@@ -82,11 +89,7 @@ export default async function handler(req, res) {
     }
 
     const methodLabel =
-      body.paymentMethod === 'bank-transfer'
-        ? 'Virement diaspora'
-        : body.paymentMethod === 'visa'
-          ? 'Visa diaspora'
-          : 'Mastercard diaspora'
+      PAYMENT_METHOD_LABELS[body.paymentMethod] ?? 'Recharge diaspora'
 
     const detail = `Recharge diaspora de ${sanitizeText(body.payerName, 80)} (${sanitizeText(body.payerCountry, 40)})`
 

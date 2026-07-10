@@ -266,7 +266,7 @@ export function DiasporaRecharge() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="font-semibold text-slate-900">Paiement international</h2>
             <p className="mt-1 text-xs text-slate-500">Étape 3 — choisissez votre moyen de paiement</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {DIASPORA_PAYMENT_METHODS.map(({ id, label, description, icon: Icon, color }) => (
                 <button
                   key={id}

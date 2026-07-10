@@ -14,7 +14,7 @@ const DIASPORA_COUNTRIES_PREVIEW = ['France', 'États-Unis', 'Canada', 'Belgique
 
 const FEATURES = [
   { icon: Clock, label: 'Crédit instantané', detail: 'Solde mis à jour en quelques secondes' },
-  { icon: Shield, label: 'Paiement sécurisé', detail: 'Visa, Mastercard et virement international' },
+  { icon: Shield, label: 'Paiement sécurisé', detail: 'Visa, Mastercard, PayPal et virement' },
   { icon: Heart, label: 'Sans compte requis', detail: 'L’expéditeur n’a pas besoin de s’inscrire' },
 ]
 
@@ -66,9 +66,9 @@ export function DiasporaPromoSection({ variant = 'home' }: DiasporaPromoSectionP
               </h2>
 
               <p className="mt-5 max-w-xl text-base leading-relaxed text-indigo-100/90 sm:text-lg">
-                Créditez une carte multiservice depuis l&apos;étranger par carte bancaire
-                internationale. Simple, rapide et traçable — idéal pour la famille, les études ou
-                les dépenses du quotidien.
+                Créditez une carte multiservice depuis l&apos;étranger par carte bancaire,
+                compte PayPal ou virement international. Simple, rapide et traçable — idéal pour la
+                famille, les études ou les dépenses du quotidien.
               </p>
 
               <ul className="mt-8 space-y-4">
@@ -147,6 +147,9 @@ export function DiasporaPromoSection({ variant = 'home' }: DiasporaPromoSectionP
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white">
                       <CreditCard className="h-3.5 w-3.5" />
                       Mastercard
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/25 px-3 py-1 text-xs font-semibold text-sky-100 ring-1 ring-sky-300/30">
+                      PayPal
                     </span>
                     <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-indigo-100">
                       Virement SEPA

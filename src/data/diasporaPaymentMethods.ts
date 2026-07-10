@@ -1,12 +1,12 @@
-import { Building2, CreditCard, Globe } from 'lucide-react'
+import { Building2, CreditCard, Globe, Wallet } from 'lucide-react'
 
-export type DiasporaPaymentMethodId = 'visa' | 'mastercard' | 'bank-transfer'
+export type DiasporaPaymentMethodId = 'visa' | 'mastercard' | 'paypal' | 'bank-transfer'
 
 export interface DiasporaPaymentMethod {
   id: DiasporaPaymentMethodId
   label: string
   description: string
-  icon: typeof CreditCard | typeof Building2 | typeof Globe
+  icon: typeof CreditCard | typeof Building2 | typeof Globe | typeof Wallet
   color: string
 }
 
@@ -26,6 +26,13 @@ export const DIASPORA_PAYMENT_METHODS: DiasporaPaymentMethod[] = [
     color: 'border-red-500 bg-red-50',
   },
   {
+    id: 'paypal',
+    label: 'PayPal',
+    description: 'Compte PayPal (EUR, USD, CAD, GBP…)',
+    icon: Wallet,
+    color: 'border-sky-600 bg-sky-50',
+  },
+  {
     id: 'bank-transfer',
     label: 'Virement bancaire',
     description: 'Virement SEPA ou international vers la Guinée',
@@ -33,6 +40,13 @@ export const DIASPORA_PAYMENT_METHODS: DiasporaPaymentMethod[] = [
     color: 'border-slate-400 bg-slate-50',
   },
 ]
+
+export const DIASPORA_PAYMENT_LABELS: Record<DiasporaPaymentMethodId, string> = {
+  visa: 'Visa diaspora',
+  mastercard: 'Mastercard diaspora',
+  paypal: 'PayPal diaspora',
+  'bank-transfer': 'Virement diaspora',
+}
 
 export const DIASPORA_COUNTRIES = [
   { code: 'FR', label: 'France' },
@@ -50,5 +64,5 @@ export const DIASPORA_COUNTRIES = [
 ] as const
 
 export function getDiasporaPaymentLabel(id: DiasporaPaymentMethodId): string {
-  return DIASPORA_PAYMENT_METHODS.find((m) => m.id === id)?.label ?? id
+  return DIASPORA_PAYMENT_LABELS[id] ?? id
 }
