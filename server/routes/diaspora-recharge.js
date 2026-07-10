@@ -113,20 +113,24 @@ export default async function handler(req, res) {
     }
     await logRecharge(redis, entry)
 
-    await sendTypedEmail('diaspora_recharge_beneficiary', {
-      email: beneficiary.email,
-      fullName: beneficiary.fullName,
-      amount: body.amount,
-      payerName: entry.payerName,
-      newBalance: result.user.balance,
-    })
+    try {
+      await sendTypedEmail('diaspora_recharge_beneficiary', {
+        email: beneficiary.email,
+        fullName: beneficiary.fullName,
+        amount: body.amount,
+        payerName: entry.payerName,
+        newBalance: result.user.balance,
+      })
 
-    await sendTypedEmail('diaspora_recharge_payer', {
-      email: payerEmail,
-      payerName: entry.payerName,
-      beneficiaryName: beneficiary.fullName,
-      amount: body.amount,
-    })
+      await sendTypedEmail('diaspora_recharge_payer', {
+        email: payerEmail,
+        payerName: entry.payerName,
+        beneficiaryName: beneficiary.fullName,
+        amount: body.amount,
+      })
+    } catch (emailError) {
+      console.error('diaspora-recharge email error', emailError)
+    }
 
     return res.status(200).json({
       ok: true,

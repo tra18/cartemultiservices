@@ -19,7 +19,7 @@ export function MobileNavSheet({
   groups,
   accent,
   title = 'Menu',
-  subtitle = 'Navigation par famille',
+  subtitle = 'Menus et sous-menus',
 }: MobileNavSheetProps) {
   if (!open) return null
 

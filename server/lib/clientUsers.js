@@ -189,6 +189,8 @@ export async function creditUserRecharge(redis, userId, { amount, method, detail
 }
 
 const PARENT_MINORS_PREFIX = 'client-parent-minors:'
+
+export function isAdultAccount(user) {
   return (user?.accountType ?? 'adult') !== 'minor'
 }
 

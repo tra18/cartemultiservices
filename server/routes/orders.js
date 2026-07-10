@@ -25,36 +25,7 @@ import {
   verifyAdminSession,
 } from '../lib/security.js'
 import { CARD_PRICE } from '../lib/pricing.js'
-import {
-  createOrderFormChallenge,
-  isOrderFormSecurityConfigured,
-  verifyOrderFormSecurity,
-} from '../lib/orderFormSecurity.js'
-
-async function handleOrderFormChallenge(req, res, redis) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET')
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
-  if (!isOrderFormSecurityConfigured()) {
-    return res.status(503).json({ error: 'Protection commande non configurée' })
-  }
-
-  const ip = getClientIp(req)
-  const allowed = await rateLimit(redis, `rate:order-challenge:${ip}`, 30, 3600)
-  if (!allowed) {
-    return res.status(429).json({ error: 'Trop de requêtes. Réessayez plus tard.' })
-  }
-
-  try {
-    const challenge = await createOrderFormChallenge(redis)
-    return res.status(200).json(challenge)
-  } catch (error) {
-    console.error('order-form-challenge error', error)
-    return res.status(500).json({ error: 'Erreur serveur' })
-  }
-}
+import { verifyOrderFormSecurity } from '../lib/orderFormSecurity.js'
 function getPathname(req) {
   const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
   if (typeof forwarded === 'string' && forwarded.startsWith('/api/')) {
@@ -238,10 +209,6 @@ export default async function handler(req, res) {
   const path = getPathname(req)
 
   try {
-    if (path.endsWith('/order-form-challenge')) {
-      return handleOrderFormChallenge(req, res, redis)
-    }
-
     if (path.endsWith('/orders-replacement')) {
       return handleOrdersReplacement(req, res, redis)
     }

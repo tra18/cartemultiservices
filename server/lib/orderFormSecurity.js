@@ -6,7 +6,15 @@ export const MIN_ORDER_FORM_MS = 8000
 const MAX_ORDER_FORM_MS = 30 * 60 * 1000
 
 function getSigningSecret() {
-  return process.env.API_SECRET || process.env.ADMIN_PASSWORD || ''
+  const explicit = process.env.API_SECRET || process.env.ADMIN_PASSWORD
+  if (explicit) return explicit
+
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (upstashToken) {
+    return createHmac('sha256', 'mscarte-order-form-v1').update(upstashToken).digest('hex')
+  }
+
+  return ''
 }
 
 function safeEqualHex(a, b) {

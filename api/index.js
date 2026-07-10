@@ -9,6 +9,7 @@ import clientUsersAdmin from '../server/routes/client-users-admin.js'
 import careers from '../server/routes/careers.js'
 import diasporaRecharge from '../server/routes/diaspora-recharge.js'
 import family from '../server/routes/family.js'
+import orderFormChallenge from '../server/routes/order-form-challenge.js'
 
 function getPathname(req) {
   const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
@@ -31,7 +32,7 @@ const ROUTES = {
   '/api/orders-mine': orders,
   '/api/orders-admin': orders,
   '/api/orders-replacement': orders,
-  '/api/order-form-challenge': orders,
+  '/api/order-form-challenge': orderFormChallenge,
   '/api/admin-auth': adminAuth,
   '/api/wallet': wallet,
   '/api/wallet-health': wallet,

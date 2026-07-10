@@ -146,7 +146,7 @@ export function AppShell({
         groups={navGroups}
         accent={accent}
         title={menuTitle}
-        subtitle="Sections regroupées par famille"
+        subtitle="Menus et sous-menus"
       />
     </div>
   )
