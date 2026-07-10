@@ -1,4 +1,4 @@
-import { Briefcase, Building2, Store } from 'lucide-react'
+import { Briefcase, Store, User } from 'lucide-react'
 
 export interface HomeNavLink {
   href: string
@@ -35,7 +35,7 @@ export const HOME_NAV_GROUPS: HomeNavGroup[] = [
 ]
 
 export const HOME_ACCESS_LINKS = [
-  { href: '/commercant/connexion', label: 'Espace commerçant', icon: Store },
-  { href: '/commercant/inscription', label: 'Devenir commerçant', icon: Building2 },
+  { href: '/connexion', label: 'Particulier', icon: User, action: 'client' as const },
+  { href: '/commercant/connexion', label: 'Commerçant', icon: Store, action: 'merchant' as const },
   { href: '/carrieres', label: 'Carrière chez nous', icon: Briefcase, external: true },
 ] as const

@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { HomeNavMenu } from '../components/HomeNavMenu'
+import { ClientAccessMenu } from '../components/ClientAccessMenu'
 import { DiasporaPromoSection } from '../components/DiasporaPromoSection'
 import { PlatformLogo } from '../components/PlatformLogo'
 import { LoginModal } from '../components/LoginModal'
@@ -155,20 +156,11 @@ export function Home() {
           <HomeNavMenu groups={HOME_NAV_GROUPS} variant="desktop" />
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to="/commercant/connexion"
-              className="hidden rounded-full px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900 md:inline-flex"
-            >
-              Espace commerçant
-            </Link>
             {!isAuthenticated && (
-              <button
-                type="button"
-                onClick={() => setLoginOpen(true)}
-                className="hidden rounded-full px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50 sm:inline-flex"
-              >
-                Accès clients
-              </button>
+              <ClientAccessMenu
+                variant="desktop"
+                onParticulier={() => setLoginOpen(true)}
+              />
             )}
             <Link
               to={primaryCta}
@@ -219,42 +211,33 @@ export function Home() {
                 onNavigate={() => setMobileMenuOpen(false)}
               />
 
-              <section className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-                <div className="border-b border-stone-100 px-4 py-3">
-                  <p className="text-sm font-semibold text-stone-800">Accès</p>
-                  <p className="mt-0.5 text-[11px] text-stone-400">Espaces client et commerçant</p>
-                </div>
-                <div className="space-y-0.5 p-2">
-                  <Link
-                    to="/commercant/connexion"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
-                  >
-                    <Store className="h-5 w-5 text-stone-500" />
-                    Espace commerçant
-                  </Link>
-                  {!isAuthenticated && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false)
-                        setLoginOpen(true)
-                      }}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50"
-                    >
-                      Accès clients
-                    </button>
-                  )}
-                  <Link
-                    to={primaryCta}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white"
-                  >
-                    {primaryLabel}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </section>
+              {!isAuthenticated && (
+                <ClientAccessMenu
+                  variant="mobile"
+                  onParticulier={() => setLoginOpen(true)}
+                  onNavigate={() => setMobileMenuOpen(false)}
+                />
+              )}
+
+              {isAuthenticated && (
+                <Link
+                  to={CLIENT_DASHBOARD_PATH}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 text-sm font-semibold text-stone-800"
+                >
+                  Mon espace client
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+
+              <Link
+                to={primaryCta}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white"
+              >
+                {primaryLabel}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </div>
@@ -300,14 +283,10 @@ export function Home() {
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setLoginOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-500/20 px-7 py-3.5 text-sm font-semibold text-indigo-100 transition hover:bg-indigo-500/30"
-                >
-                  Accès clients
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                <ClientAccessMenu
+                  variant="hero"
+                  onParticulier={() => setLoginOpen(true)}
+                />
               )}
             </div>
           </div>
@@ -606,6 +585,25 @@ export function Home() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Accès clients
+              </p>
+              {!isAuthenticated ? (
+                <ClientAccessMenu
+                  variant="footer"
+                  onParticulier={() => setLoginOpen(true)}
+                />
+              ) : (
+                <ul className="mt-4 space-y-2 text-sm text-stone-600">
+                  <li>
+                    <Link to={CLIENT_DASHBOARD_PATH} className="hover:text-stone-900">
+                      Mon espace
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                 Clients
               </p>
               <ul className="mt-4 space-y-2 text-sm text-stone-600">
@@ -614,24 +612,6 @@ export function Home() {
                     Commander une carte
                   </Link>
                 </li>
-                {!isAuthenticated && (
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => setLoginOpen(true)}
-                      className="font-medium text-indigo-600 hover:text-indigo-800"
-                    >
-                      Accès clients
-                    </button>
-                  </li>
-                )}
-                {isAuthenticated && (
-                  <li>
-                    <Link to={CLIENT_DASHBOARD_PATH} className="hover:text-stone-900">
-                      Mon espace
-                    </Link>
-                  </li>
-                )}
               </ul>
             </div>
             <div>
@@ -659,11 +639,6 @@ export function Home() {
                 <li>
                   <Link to="/commercant/inscription" className="hover:text-stone-900">
                     Devenir commerçant
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/commercant/connexion" className="hover:text-stone-900">
-                    Espace commerçant
                   </Link>
                 </li>
                 <li>
