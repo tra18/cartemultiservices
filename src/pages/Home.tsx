@@ -6,13 +6,17 @@ import {
   ChevronRight,
   CreditCard,
   Fuel,
+  Globe,
+  Hospital,
   Lock,
   Mail,
   Menu,
+  Pill,
   QrCode,
   Shield,
   ShoppingCart,
   Smartphone,
+  Stethoscope,
   Store,
   UtensilsCrossed,
   X,
@@ -30,12 +34,7 @@ import { useAuth } from '../context/AuthContext'
 import { CARD_PRICE } from '../utils/pricing'
 import { formatCurrency } from '../utils/currency'
 
-const NAV_LINKS = [
-  { href: '#services', label: 'Services', external: false },
-  { href: '#parcours', label: 'Parcours client', external: false },
-  { href: '#commercants', label: 'Commerçants', external: false },
-  { href: '/carrieres', label: 'Carrières', external: true },
-]
+import { HOME_NAV_GROUPS } from '../navigation/homeNav'
 
 const SERVICES = [
   {
@@ -67,6 +66,26 @@ const SERVICES = [
     icon: Smartphone,
     title: 'Carte numérique',
     description: 'Activez une carte provisoire en attendant la livraison physique.',
+  },
+  {
+    icon: Hospital,
+    title: 'Hôpitaux',
+    description: 'Réglez consultations et soins dans les établissements partenaires.',
+  },
+  {
+    icon: Stethoscope,
+    title: 'Cliniques',
+    description: 'Payez vos visites médicales en toute simplicité.',
+  },
+  {
+    icon: Pill,
+    title: 'Pharmacies',
+    description: 'Achetez vos médicaments sans espèces chez les pharmacies agréées.',
+  },
+  {
+    icon: Globe,
+    title: 'Recharge diaspora',
+    description: 'Créditez une carte en Guinée depuis l’étranger par carte bancaire internationale.',
   },
 ]
 
@@ -127,26 +146,38 @@ export function Home() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex">
-            {NAV_LINKS.map(({ href, label, external }) =>
-              external ? (
-                <Link
-                  key={href}
-                  to={href}
-                  className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
-                >
-                  {label}
-                </Link>
-              ) : (
-                <a
-                  key={href}
-                  href={href}
-                  className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
-                >
-                  {label}
-                </a>
-              )
-            )}
+          <nav className="hidden items-stretch gap-5 lg:flex">
+            {HOME_NAV_GROUPS.map((group, index) => (
+              <div key={group.id} className="flex items-center gap-5">
+                {index > 0 && <div className="h-10 w-px bg-stone-200" aria-hidden />}
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">
+                    {group.label}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    {group.links.map(({ href, label, external }) =>
+                      external ? (
+                        <Link
+                          key={href}
+                          to={href}
+                          className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+                        >
+                          {label}
+                        </Link>
+                      ) : (
+                        <a
+                          key={href}
+                          href={href}
+                          className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+                        >
+                          {label}
+                        </a>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -193,8 +224,11 @@ export function Home() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="absolute inset-x-0 top-0 max-h-[90vh] overflow-y-auto rounded-b-2xl bg-white shadow-2xl safe-top">
-            <div className="flex items-center justify-between border-b border-stone-100 px-5 py-4">
-              <p className="text-sm font-semibold text-stone-900">Navigation</p>
+            <div className="flex items-start justify-between gap-3 border-b border-stone-100 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-stone-900">Menu</p>
+                <p className="mt-0.5 text-xs text-stone-500">Sections regroupées par famille</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
@@ -204,40 +238,54 @@ export function Home() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="space-y-6 p-5">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
-                  Découvrir
-                </p>
-                <div className="mt-2 space-y-1">
-                  {NAV_LINKS.map(({ href, label, external }) =>
-                    external ? (
-                      <Link
-                        key={href}
-                        to={href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      <a
-                        key={href}
-                        href={href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50"
-                      >
-                        {label}
-                      </a>
-                    )
-                  )}
+            <div className="space-y-5 p-5">
+              {HOME_NAV_GROUPS.map((group) => (
+                <section
+                  key={group.id}
+                  className="rounded-2xl border border-stone-200 bg-stone-50/80 p-3"
+                >
+                  <div className="px-2 pb-2">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-stone-500">
+                      {group.label}
+                    </p>
+                    {group.description && (
+                      <p className="mt-0.5 text-[11px] text-stone-400">{group.description}</p>
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.links.map(({ href, label, external }) =>
+                      external ? (
+                        <Link
+                          key={href}
+                          to={href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-white"
+                        >
+                          {label}
+                        </Link>
+                      ) : (
+                        <a
+                          key={href}
+                          href={href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-white"
+                        >
+                          {label}
+                        </a>
+                      )
+                    )}
+                  </div>
+                </section>
+              ))}
+
+              <section className="rounded-2xl border border-stone-200 bg-stone-50/80 p-3">
+                <div className="px-2 pb-2">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-stone-500">
+                    Accès & connexion
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-stone-400">Espaces client et commerçant</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
-                  Accès
-                </p>
-                <div className="mt-2 space-y-1">
+                <div className="space-y-0.5">
                   <Link
                     to="/commercant/connexion"
                     onClick={() => setMobileMenuOpen(false)}
@@ -267,7 +315,7 @@ export function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
-              </div>
+              </section>
             </div>
           </div>
         </div>
@@ -626,6 +674,11 @@ export function Home() {
                 <li>
                   <Link to="/carrieres" className="hover:text-stone-900">
                     Carrière chez nous
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/recharger-diaspora" className="hover:text-stone-900">
+                    Recharge diaspora
                   </Link>
                 </li>
               </ul>

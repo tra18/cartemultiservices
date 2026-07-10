@@ -396,6 +396,56 @@ Cordialement,
 Système Guinée Multiservices`,
       }
 
+    case 'diaspora_recharge_beneficiary':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Recharge reçue depuis l’étranger — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.fullName)},
+
+Votre carte a été rechargée depuis l'étranger.
+
+  Montant : ${formatGnf(data.amount)}
+  Envoyé par : ${sanitize(data.payerName)}
+  Nouveau solde : ${formatGnf(data.newBalance)}
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
+    case 'diaspora_recharge_payer':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Confirmation recharge diaspora — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.payerName)},
+
+Votre recharge pour ${sanitize(data.beneficiaryName)} a bien été enregistrée.
+
+  Montant crédité : ${formatGnf(data.amount)}
+  Bénéficiaire : ${sanitize(data.beneficiaryName)}
+
+Merci de votre confiance.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
+    case 'minor_card_ordered':
+      return {
+        to: sanitize(data.email, 80),
+        subject: 'Commande carte mineur — Guinée Multiservices',
+        text: `Bonjour ${sanitize(data.parentName)},
+
+Votre demande de carte pour ${sanitize(data.minorName)} a été enregistrée.
+
+  Référence : ${sanitize(data.orderId, 40)}
+  Montant : ${formatGnf(data.amount)}
+
+Vous conservez le contrôle total de la carte : recharges, blocage, PIN et suivi des dépenses.
+
+Cordialement,
+L'équipe Guinée Multiservices`,
+      }
+
     default:
       return null
   }

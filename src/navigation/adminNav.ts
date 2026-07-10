@@ -5,29 +5,34 @@ import type { NavGroup, ShellNavItem } from './types'
 export const adminMobileBar: ShellNavItem[] = [
   { to: ADMIN_BASE_PATH, label: 'Commandes', icon: ClipboardList, end: true },
   { to: `${ADMIN_BASE_PATH}/comptes`, label: 'Comptes', icon: UserRound },
-  { to: `${ADMIN_BASE_PATH}/carrieres`, label: 'Carrières', icon: Briefcase },
+  { to: `${ADMIN_BASE_PATH}/finances`, label: 'Finances', icon: Wallet },
 ]
 
 export const adminNavGroups: NavGroup[] = [
   {
     id: 'clients',
-    label: 'Clients & commandes',
+    label: 'Clients & cartes',
+    description: 'Commandes et comptes utilisateurs',
     items: [
-      { to: ADMIN_BASE_PATH, label: 'Commandes cartes', icon: ClipboardList, end: true },
+      { to: ADMIN_BASE_PATH, label: 'Commandes de cartes', icon: ClipboardList, end: true },
       { to: `${ADMIN_BASE_PATH}/comptes`, label: 'Comptes clients', icon: UserRound },
     ],
   },
   {
     id: 'finances',
     label: 'Finances',
-    items: [{ to: `${ADMIN_BASE_PATH}/finances`, label: 'Finances & retraits', icon: Wallet }],
+    description: 'Trésorerie et retraits',
+    items: [
+      { to: `${ADMIN_BASE_PATH}/finances`, label: 'Finances & retraits', icon: Wallet },
+    ],
   },
   {
-    id: 'carrieres',
-    label: 'Carrières',
+    id: 'rh',
+    label: 'Ressources humaines',
+    description: 'Recrutement et candidatures',
     items: [
-      { to: `${ADMIN_BASE_PATH}/carrieres`, label: 'Offres d\'emploi', icon: Briefcase },
-      { to: `${ADMIN_BASE_PATH}/candidatures`, label: 'Candidatures', icon: UserPlus },
+      { to: `${ADMIN_BASE_PATH}/carrieres`, label: 'Offres d’emploi', icon: Briefcase },
+      { to: `${ADMIN_BASE_PATH}/candidatures`, label: 'Candidatures reçues', icon: UserPlus },
     ],
   },
 ]

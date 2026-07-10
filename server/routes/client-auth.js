@@ -113,8 +113,11 @@ export default async function handler(req, res) {
       }
 
       const user = await getUserByEmail(redis, email)
-      if (!user || !verifyPassword(password, user.passwordHash)) {
+      if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
         return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
+      }
+      if ((user.accountType ?? 'adult') === 'minor') {
+        return res.status(403).json({ error: 'Les comptes mineurs sont gérés par le parent' })
       }
 
       const { token } = await createClientSession(redis, user.id, meta)

@@ -50,6 +50,9 @@ import { AdminApplications } from './pages/admin/AdminApplications'
 import { CareersList } from './pages/careers/CareersList'
 import { CareerDetail } from './pages/careers/CareerDetail'
 import { CareerApply } from './pages/careers/CareerApply'
+import { DiasporaRecharge } from './pages/DiasporaRecharge'
+import { FamilyMinors } from './pages/FamilyMinors'
+import { MinorManage } from './pages/MinorManage'
 import { ADMIN_BASE_PATH, ADMIN_LOGIN_PATH } from './constants/brand'
 import { IdleSessionGuard } from './components/IdleSessionGuard'
 
@@ -124,6 +127,7 @@ export default function App() {
             <Route path="/carrieres" element={<CareersList />} />
             <Route path="/carrieres/:jobId" element={<CareerDetail />} />
             <Route path="/carrieres/:jobId/postuler" element={<CareerApply />} />
+            <Route path="/recharger-diaspora" element={<DiasporaRecharge />} />
 
             {/* Espace client — routes publiques */}
             <Route
@@ -183,6 +187,8 @@ export default function App() {
               <Route path="/securite-carte" element={<CardSecurity />} />
               <Route path="/commander-remplacement" element={<OrderReplacementCard />} />
               <Route path="/profil" element={<Profile />} />
+              <Route path="/ma-famille" element={<FamilyMinors />} />
+              <Route path="/ma-famille/:minorId" element={<MinorManage />} />
               <Route path="/historique" element={<History />} />
             </Route>
           </Routes>

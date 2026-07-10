@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { PAYMENT_METHODS } from '../data/paymentMethods'
 import { useAuth } from '../context/AuthContext'
@@ -73,6 +73,12 @@ export function Recharge() {
         <p className="mt-1 text-sm text-slate-500">
           Rechargez en francs guinéens (GNF) via Orange Money, Mobile Money, Visa ou Mastercard.
         </p>
+        <Link
+          to="/recharger-diaspora"
+          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+        >
+          Depuis l&apos;étranger (diaspora) →
+        </Link>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

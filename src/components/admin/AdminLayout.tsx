@@ -36,6 +36,7 @@ export function AdminLayout() {
       header={header}
       navGroups={adminNavGroups}
       mobileBar={adminMobileBar}
+      menuTitle="Menu administration"
       accent="violet"
       width="admin"
     >

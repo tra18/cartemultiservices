@@ -15,26 +15,29 @@ export const merchantMobileBar: ShellNavItem[] = [
 
 export const merchantNavGroups: NavGroup[] = [
   {
-    id: 'principal',
-    label: 'Principal',
+    id: 'vue',
+    label: 'Vue d’ensemble',
+    description: 'Activité et indicateurs',
     items: [
       { to: '/commercant', label: 'Tableau de bord', icon: LayoutDashboard, end: true },
     ],
   },
   {
-    id: 'encaissement',
-    label: 'Encaissement',
+    id: 'ventes',
+    label: 'Ventes & encaissement',
+    description: 'QR code et historique',
     items: [
-      { to: '/commercant/encaisser', label: 'Encaisser', icon: QrCode },
+      { to: '/commercant/encaisser', label: 'Encaisser un paiement', icon: QrCode },
       { to: '/commercant/historique', label: 'Historique des ventes', icon: History },
     ],
   },
   {
-    id: 'gestion',
-    label: 'Gestion',
+    id: 'compte',
+    label: 'Gestion du compte',
+    description: 'Catégories et retraits',
     items: [
-      { to: '/commercant/categories', label: 'Catégories', icon: Layers },
-      { to: '/commercant/retraits', label: 'Retraits', icon: ArrowDownToLine },
+      { to: '/commercant/categories', label: 'Catégories de vente', icon: Layers },
+      { to: '/commercant/retraits', label: 'Demandes de retrait', icon: ArrowDownToLine },
     ],
   },
 ]

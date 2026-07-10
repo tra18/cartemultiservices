@@ -1,0 +1,40 @@
+import { Briefcase, Building2, Store } from 'lucide-react'
+
+export interface HomeNavLink {
+  href: string
+  label: string
+  external?: boolean
+}
+
+export interface HomeNavGroup {
+  id: string
+  label: string
+  description?: string
+  links: HomeNavLink[]
+}
+
+export const HOME_NAV_GROUPS: HomeNavGroup[] = [
+  {
+    id: 'decouvrir',
+    label: 'Découvrir',
+    description: 'Services et parcours',
+    links: [
+      { href: '#services', label: 'Nos services' },
+      { href: '#parcours', label: 'Parcours client' },
+      { href: '#commercants', label: 'Devenir partenaire' },
+      { href: '/recharger-diaspora', label: 'Recharge diaspora', external: true },
+    ],
+  },
+  {
+    id: 'entreprise',
+    label: 'Entreprise',
+    description: 'Recrutement',
+    links: [{ href: '/carrieres', label: 'Carrière chez nous', external: true }],
+  },
+]
+
+export const HOME_ACCESS_LINKS = [
+  { href: '/commercant/connexion', label: 'Espace commerçant', icon: Store },
+  { href: '/commercant/inscription', label: 'Devenir commerçant', icon: Building2 },
+  { href: '/carrieres', label: 'Carrière chez nous', icon: Briefcase, external: true },
+] as const

@@ -43,6 +43,7 @@ export function MerchantLayout() {
       header={header}
       navGroups={merchantNavGroups}
       mobileBar={merchantMobileBar}
+      menuTitle="Menu commerçant"
       accent="emerald"
       width="app"
     >

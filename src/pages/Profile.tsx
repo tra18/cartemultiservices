@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, Mail, Phone, Shield, User } from 'lucide-react'
+import { Baby, ChevronRight, Mail, Phone, Shield, User } from 'lucide-react'
 import { CardVisual } from '../components/CardVisual'
 import { EnableDigitalCard } from '../components/EnableDigitalCard'
 import { WalletAddSection } from '../components/WalletAddSection'
@@ -166,6 +166,24 @@ export function Profile() {
             )}
           </div>
         )
+      )}
+
+      {(currentUser.accountType ?? 'adult') !== 'minor' && (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <Link
+            to="/ma-famille"
+            className="flex items-center justify-between px-4 py-3.5 transition hover:bg-slate-50"
+          >
+            <div className="flex items-center gap-3">
+              <Baby className="h-5 w-5 text-indigo-600" />
+              <div>
+                <span className="font-medium text-slate-800">Ma famille — cartes mineurs</span>
+                <p className="text-xs text-slate-500">Créer et contrôler les cartes de vos enfants</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-slate-400" />
+          </Link>
+        </div>
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

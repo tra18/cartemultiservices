@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TransactionItem } from '../components/TransactionItem'
 import { useCard } from '../context/CardContext'
+import { ALL_CATEGORIES } from '../data/categories'
 import type { Category } from '../types'
 import { CATEGORY_LABELS } from '../types'
 
@@ -9,10 +10,7 @@ type Filter = 'all' | 'recharge' | Category
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'Tout' },
   { key: 'recharge', label: 'Recharges' },
-  { key: 'restaurants', label: 'Restaurants' },
-  { key: 'transport', label: 'Transport' },
-  { key: 'vetements', label: 'Vêtements' },
-  { key: 'courses', label: 'Courses' },
+  ...ALL_CATEGORIES.map((key) => ({ key, label: CATEGORY_LABELS[key] })),
 ]
 
 export function History() {
@@ -25,12 +23,11 @@ export function History() {
     return t.category === filter
   })
 
-  const totalSpent = transactions
-    .filter((t) => t.type === 'paiement')
-    .reduce((sum, t) => sum + t.amount, 0)
-
-  const totalRecharged = transactions
+  const totalIn = filtered
     .filter((t) => t.type === 'recharge')
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalOut = filtered
+    .filter((t) => t.type === 'paiement')
     .reduce((sum, t) => sum + t.amount, 0)
 
   return (
@@ -38,47 +35,53 @@ export function History() {
       <div>
         <h2 className="text-xl font-bold text-slate-900">Historique</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Toutes vos recharges et paiements
+          Toutes vos recharges et paiements par catégorie.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-          <p className="text-xs font-medium text-emerald-600">Total rechargé</p>
-          <p className="mt-1 text-lg font-bold text-emerald-700">{formatCurrency(totalRecharged)}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-medium text-slate-500">Total dépensé</p>
-          <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(totalSpent)}</p>
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+          {FILTERS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                filter === key
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setFilter(key)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              filter === key
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            {key !== 'all' && key !== 'recharge' ? CATEGORY_LABELS[key] : label}
-          </button>
-        ))}
-      </div>
+      {(filter === 'all' || filter === 'recharge') && filtered.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center">
+            <p className="text-xs text-emerald-600">Entrées</p>
+            <p className="text-lg font-bold text-emerald-700">{formatCurrency(totalIn)}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+            <p className="text-xs text-slate-500">Sorties</p>
+            <p className="text-lg font-bold text-slate-800">{formatCurrency(totalOut)}</p>
+          </div>
+        </div>
+      )}
 
-      <div className="space-y-2">
-        {filtered.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
-            Aucune transaction dans cette catégorie
-          </p>
-        ) : (
-          filtered.map((t) => <TransactionItem key={t.id} transaction={t} />)
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
+          Aucune opération pour ce filtre
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((transaction) => (
+            <TransactionItem key={transaction.id} transaction={transaction} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

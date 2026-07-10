@@ -25,6 +25,16 @@ export interface UserAccount {
   /** Carte numérique provisoire (en attendant la carte physique) */
   digitalCardNumber?: string
   digitalCardEnabledAt?: string
+  accountType?: 'adult' | 'minor'
+  parentUserId?: string
+  managedByParent?: boolean
+  parentControlsPin?: boolean
+  dateOfBirth?: string
+  spendingLimits?: {
+    dailyMax?: number
+    perTransactionMax?: number
+  }
+  blockedByParent?: boolean
 }
 
 export interface RegisterData {

@@ -12,7 +12,7 @@ import {
   MERCHANT_REGISTRATION_PRICE,
 } from '../../utils/pricing'
 
-const ALL_CATEGORIES: Category[] = ['restaurants', 'transport', 'vetements', 'courses']
+import { ALL_CATEGORIES } from '../../data/categories'
 
 export function MerchantCategories() {
   const { currentMerchant, addCategory } = useMerchantAuth()

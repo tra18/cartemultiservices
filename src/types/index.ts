@@ -1,4 +1,11 @@
-export type Category = 'restaurants' | 'transport' | 'vetements' | 'courses'
+export type Category =
+  | 'restaurants'
+  | 'transport'
+  | 'vetements'
+  | 'courses'
+  | 'hopitaux'
+  | 'cliniques'
+  | 'pharmacies'
 
 export type TransactionType = 'recharge' | 'paiement'
 
@@ -18,6 +25,9 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   transport: 'Transport',
   vetements: 'Vêtements',
   courses: 'Courses',
+  hopitaux: 'Hôpitaux',
+  cliniques: 'Cliniques',
+  pharmacies: 'Pharmacies',
 }
 
 export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
@@ -25,6 +35,9 @@ export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
   transport: 'Bus, métro, taxi et carburant',
   vetements: 'Boutiques et magasins de mode',
   courses: 'Supermarchés et épiceries',
+  hopitaux: 'Hôpitaux publics et privés',
+  cliniques: 'Cliniques et centres médicaux',
+  pharmacies: 'Pharmacies et parapharmacies',
 }
 
 export function formatCategoryList(categories: Category[]): string {

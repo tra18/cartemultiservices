@@ -50,6 +50,7 @@ export function Layout() {
       header={header}
       navGroups={clientNavGroups}
       mobileBar={clientMobileBar}
+      menuTitle="Menu client"
       accent="indigo"
       width="app"
     >

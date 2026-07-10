@@ -9,7 +9,7 @@ import { CATEGORY_LABELS } from '../../types'
 import { formatCurrency } from '../../utils/currency'
 import { MERCHANT_REGISTRATION_PRICE, calculateMerchantRegistrationPrice } from '../../utils/pricing'
 
-const CATEGORIES: Category[] = ['restaurants', 'transport', 'vetements', 'courses']
+import { ALL_CATEGORIES } from '../../data/categories'
 
 export function MerchantRegister() {
   const { register } = useMerchantAuth()
@@ -131,7 +131,7 @@ export function MerchantRegister() {
                 <strong className="text-emerald-700">{formatCurrency(registrationTotal)}</strong>
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {CATEGORIES.map((cat) => {
+                {ALL_CATEGORIES.map((cat) => {
                   const selected = categories.includes(cat)
                   return (
                     <button

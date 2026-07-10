@@ -1,19 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Bus, CheckCircle, Fuel, Shirt, ShoppingCart, UtensilsCrossed } from 'lucide-react'
+import { CheckCircle, Fuel } from 'lucide-react'
 import { getMerchantsForCategory } from '../data/merchants'
+import { PAYMENT_FAMILIES, ALL_CATEGORIES, getCategoryMeta } from '../data/categories'
 import { useCard } from '../context/CardContext'
 import { useCardPinGate } from '../hooks/useCardPinGate'
 import { CLIENT_DASHBOARD_PATH } from '../constants/brand'
 import type { Category } from '../types'
-import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS } from '../types'
-
-const CATEGORIES: { key: Category; icon: typeof UtensilsCrossed }[] = [
-  { key: 'restaurants', icon: UtensilsCrossed },
-  { key: 'transport', icon: Bus },
-  { key: 'vetements', icon: Shirt },
-  { key: 'courses', icon: ShoppingCart },
-]
+import { CATEGORY_LABELS } from '../types'
 
 export function Pay() {
   const { pay, balance, formatCurrency } = useCard()
@@ -23,10 +17,10 @@ export function Pay() {
 
   const initialCategory = searchParams.get('category') as Category | null
   const [step, setStep] = useState<'category' | 'details' | 'success'>(
-    initialCategory && CATEGORIES.some((c) => c.key === initialCategory) ? 'details' : 'category'
+    initialCategory && ALL_CATEGORIES.includes(initialCategory) ? 'details' : 'category'
   )
   const [category, setCategory] = useState<Category | null>(
-    initialCategory && CATEGORIES.some((c) => c.key === initialCategory) ? initialCategory : null
+    initialCategory && ALL_CATEGORIES.includes(initialCategory) ? initialCategory : null
   )
   const [merchant, setMerchant] = useState('')
   const [amount, setAmount] = useState('')
@@ -85,26 +79,40 @@ export function Pay() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          {CATEGORIES.map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => {
-                setCategory(key)
-                setMerchant('')
-                setStep('details')
-              }}
-              className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-200 hover:shadow-md active:scale-[0.98]"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                <Icon className="h-6 w-6" />
+        <div className="space-y-6">
+          {PAYMENT_FAMILIES.map((family) => (
+            <section key={family.id}>
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-slate-900">{family.label}</h3>
+                <p className="text-xs text-slate-500">{family.description}</p>
               </div>
-              <div>
-                <p className="font-semibold text-slate-900">{CATEGORY_LABELS[key]}</p>
-                <p className="text-sm text-slate-500">{CATEGORY_DESCRIPTIONS[key]}</p>
+              <div className="space-y-2">
+                {family.categories.map((key) => {
+                  const meta = getCategoryMeta(key)
+                  const Icon = meta.icon
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setCategory(key)
+                        setMerchant('')
+                        setStep('details')
+                      }}
+                      className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-indigo-200 hover:shadow-md active:scale-[0.98]"
+                    >
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl border ${meta.color}`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{meta.label}</p>
+                        <p className="text-sm text-slate-500">{meta.description}</p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
-            </button>
+            </section>
           ))}
         </div>
 
@@ -129,7 +137,7 @@ export function Pay() {
           {category ? CATEGORY_LABELS[category] : 'Paiement'}
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          {category ? CATEGORY_DESCRIPTIONS[category] : ''}
+          {category ? getCategoryMeta(category).description : ''}
         </p>
       </div>
 

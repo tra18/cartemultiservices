@@ -1,20 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useEffect } from 'react'
-import { AlertCircle, Bus, CreditCard, Fuel, PlusCircle, QrCode, Shield, Shirt, ShoppingCart, Smartphone, UtensilsCrossed } from 'lucide-react'
+import { AlertCircle, CreditCard, Fuel, Globe, PlusCircle, QrCode, Shield, Smartphone } from 'lucide-react'
 import { CardVisual } from '../components/CardVisual'
 import { TransactionItem } from '../components/TransactionItem'
 import { useAuth } from '../context/AuthContext'
 import { useCard } from '../context/CardContext'
-import type { Category } from '../types'
-import { CATEGORY_DESCRIPTIONS, CATEGORY_LABELS } from '../types'
+import { PAYMENT_FAMILIES, getCategoryMeta } from '../data/categories'
 import { resolveCardStatus, isCardUsable, isDigitalCardActive, canEnableDigitalCard } from '../utils/cardStatus'
-
-const CATEGORIES: { key: Category; icon: typeof UtensilsCrossed; color: string }[] = [
-  { key: 'restaurants', icon: UtensilsCrossed, color: 'bg-orange-50 text-orange-600 border-orange-100' },
-  { key: 'transport', icon: Bus, color: 'bg-blue-50 text-blue-600 border-blue-100' },
-  { key: 'vetements', icon: Shirt, color: 'bg-pink-50 text-pink-600 border-pink-100' },
-  { key: 'courses', icon: ShoppingCart, color: 'bg-green-50 text-green-600 border-green-100' },
-]
 
 export function Dashboard() {
   const { currentUser, refreshCurrentUser } = useAuth()
@@ -156,6 +148,14 @@ export function Dashboard() {
           </Link>
 
           <Link
+            to="/recharger-diaspora"
+            className="flex items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3.5 font-semibold text-indigo-700 transition hover:bg-indigo-100"
+          >
+            <Globe className="h-5 w-5" />
+            Recharge diaspora (depuis l&apos;étranger)
+          </Link>
+
+          <Link
             to="/recharger"
             className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3.5 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
           >
@@ -166,25 +166,34 @@ export function Dashboard() {
       )}
 
       {cardUsable && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Où utiliser ma carte
-          </h2>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {CATEGORIES.map(({ key, icon: Icon, color }) => (
-              <Link
-                key={key}
-                to={`/payer?category=${key}`}
-                className={`flex flex-col gap-2 rounded-xl border p-4 transition hover:shadow-md ${color}`}
-              >
-                <Icon className="h-6 w-6" />
-                <div>
-                  <p className="font-semibold">{CATEGORY_LABELS[key]}</p>
-                  <p className="text-xs opacity-80">{CATEGORY_DESCRIPTIONS[key]}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+        <section className="space-y-5">
+          {PAYMENT_FAMILIES.map((family) => (
+            <div key={family.id}>
+              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+                {family.label}
+              </h2>
+              <p className="mb-3 text-xs text-slate-400">{family.description}</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {family.categories.map((key) => {
+                  const meta = getCategoryMeta(key)
+                  const Icon = meta.icon
+                  return (
+                    <Link
+                      key={key}
+                      to={`/payer?category=${key}`}
+                      className={`flex flex-col gap-2 rounded-xl border p-4 transition hover:shadow-md ${meta.color}`}
+                    >
+                      <Icon className="h-6 w-6" />
+                      <div>
+                        <p className="font-semibold">{meta.label}</p>
+                        <p className="text-xs opacity-80">{meta.description}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </section>
       )}
 
