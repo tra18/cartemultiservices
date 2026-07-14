@@ -11,6 +11,7 @@ import diasporaRecharge from '../server/routes/diaspora-recharge.js'
 import family from '../server/routes/family.js'
 import orderFormChallenge from '../server/routes/order-form-challenge.js'
 import walletCharge from '../server/routes/wallet-charge.js'
+import qrPayments from '../server/routes/qr-payments.js'
 
 function getPathname(req) {
   const forwarded = req.headers['x-forwarded-uri'] ?? req.headers['x-vercel-original-url']
@@ -56,6 +57,10 @@ export default async function handler(req, res) {
 
   if (path.startsWith('/api/wallet-pay/') || path.startsWith('/api/wallet-charge')) {
     return walletCharge(req, res)
+  }
+
+  if (path.startsWith('/api/qr-payments')) {
+    return qrPayments(req, res)
   }
 
   const routeHandler = ROUTES[path]

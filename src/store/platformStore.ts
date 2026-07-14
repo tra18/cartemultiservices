@@ -1,9 +1,6 @@
 import type { Category } from '../types'
-import type { Transaction } from '../types'
-import type { UserAccount } from '../types/auth'
 import type {
   MerchantAccount,
-  PaymentRequest,
   WithdrawalRequest,
 } from '../types/merchant'
 import {
@@ -11,11 +8,8 @@ import {
   sendMerchantWithdrawalProcessedEmail,
   sendMerchantWithdrawalRequestedEmail,
 } from '../services/emailService'
-import { recordQrSaleOnServer } from '../services/financeServer'
 
 const MERCHANTS_KEY = 'carte-multiservice-merchants'
-const PAYMENTS_KEY = 'carte-multiservice-payments'
-const PAYMENT_EXPIRY_MS = 15 * 60 * 1000
 const WITHDRAWAL_METHOD_LABELS: Record<WithdrawalRequest['method'], string> = {
   'orange-money': 'Orange Money',
   'mobile-money': 'Mobile Money (MTN)',
@@ -120,147 +114,6 @@ export function saveMerchants(merchants: MerchantAccount[]) {
   saveJson(MERCHANTS_KEY, merchants)
 }
 
-export function loadPaymentRequests(): PaymentRequest[] {
-  return loadJson(PAYMENTS_KEY, [])
-}
-
-export function savePaymentRequests(requests: PaymentRequest[]) {
-  saveJson(PAYMENTS_KEY, requests)
-}
-
-export function getPaymentRequest(id: string): PaymentRequest | undefined {
-  return loadPaymentRequests().find((p) => p.id === id)
-}
-
-export function createPaymentRequest(
-  merchant: MerchantAccount,
-  amount: number,
-  category?: Category
-): PaymentRequest {
-  const paymentCategory =
-    category ?? (merchant.categories.length === 1 ? merchant.categories[0] : undefined)
-
-  if (!paymentCategory || !merchant.categories.includes(paymentCategory)) {
-    throw new Error('Catégorie de paiement invalide')
-  }
-
-  const now = new Date()
-  const request: PaymentRequest = {
-    id: crypto.randomUUID(),
-    merchantId: merchant.id,
-    merchantName: merchant.businessName,
-    category: paymentCategory,
-    amount,
-    status: 'pending',
-    createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + PAYMENT_EXPIRY_MS).toISOString(),
-  }
-
-  const requests = loadPaymentRequests()
-  savePaymentRequests([request, ...requests])
-  return request
-}
-
-export function cancelPaymentRequest(paymentId: string, merchantId: string): boolean {
-  const requests = loadPaymentRequests()
-  const index = requests.findIndex(
-    (p) => p.id === paymentId && p.merchantId === merchantId && p.status === 'pending'
-  )
-  if (index === -1) return false
-
-  requests[index] = { ...requests[index], status: 'cancelled' }
-  savePaymentRequests(requests)
-  return true
-}
-
-export function getQrPaymentUrl(paymentId: string): string {
-  return `${window.location.origin}/paiement-qr/${paymentId}`
-}
-
-function expireIfNeeded(request: PaymentRequest): PaymentRequest {
-  if (request.status === 'pending' && new Date(request.expiresAt) < new Date()) {
-    const requests = loadPaymentRequests()
-    const updated = requests.map((p) =>
-      p.id === request.id ? { ...p, status: 'expired' as const } : p
-    )
-    savePaymentRequests(updated)
-    return { ...request, status: 'expired' }
-  }
-  return request
-}
-
-export async function completeQrPayment(
-  paymentId: string,
-  user: UserAccount
-): Promise<{ success: boolean; error?: string; transaction?: Transaction }> {
-  let request = getPaymentRequest(paymentId)
-  if (!request) return { success: false, error: 'Paiement introuvable' }
-
-  request = expireIfNeeded(request)
-
-  if (request.status === 'paid') {
-    return { success: false, error: 'Ce paiement a déjà été effectué' }
-  }
-  if (request.status !== 'pending') {
-    return { success: false, error: 'Ce QR code n\'est plus valide' }
-  }
-  if (user.balance < request.amount) {
-    return { success: false, error: 'Solde insuffisant sur votre carte' }
-  }
-
-  const merchants = loadMerchants()
-  const merchantIndex = merchants.findIndex((m) => m.id === request!.merchantId)
-  if (merchantIndex === -1) {
-    return { success: false, error: 'Commerçant introuvable' }
-  }
-
-  const serverResult = await recordQrSaleOnServer({
-    merchantId: request.merchantId,
-    paymentRequestId: paymentId,
-    amount: request.amount,
-    customerName: user.fullName,
-  })
-  if (!serverResult.success) {
-    return { success: false, error: serverResult.error ?? 'Synchronisation du paiement échouée' }
-  }
-
-  if (serverResult.merchant) {
-    merchants[merchantIndex] = {
-      ...merchants[merchantIndex],
-      balance: serverResult.merchant.balance,
-      sales: serverResult.merchant.sales,
-    }
-    saveMerchants(merchants)
-  }
-
-  const requests = loadPaymentRequests()
-  savePaymentRequests(
-    requests.map((p) =>
-      p.id === paymentId
-        ? {
-            ...p,
-            status: 'paid' as const,
-            paidAt: new Date().toISOString(),
-            paidByUserId: user.id,
-            paidByUserName: user.fullName,
-          }
-        : p
-    )
-  )
-
-  const transaction: Transaction = {
-    id: crypto.randomUUID(),
-    type: 'paiement',
-    category: request.category,
-    merchant: request.merchantName,
-    amount: request.amount,
-    date: new Date().toISOString(),
-    method: 'QR Code',
-  }
-
-  return { success: true, transaction }
-}
-
 export function requestWithdrawal(
   merchantId: string,
   amount: number,
@@ -342,10 +195,6 @@ export function createMerchant(data: Omit<MerchantAccount, 'id' | 'balance' | 's
     withdrawals: [],
     registrationPaid: data.registrationPaid ?? false,
   }
-}
-
-export function getMerchantPayments(merchantId: string): PaymentRequest[] {
-  return loadPaymentRequests().filter((p) => p.merchantId === merchantId)
 }
 
 export interface MerchantWithdrawalWithMeta extends WithdrawalRequest {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AlertCircle, CheckCircle, Store } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getPaymentRequest } from '../store/platformStore'
+import { fetchQrPayment } from '../services/qrPayments'
 import type { PaymentRequest } from '../types/merchant'
 import { CATEGORY_LABELS } from '../types'
 import { useCardPinGate } from '../hooks/useCardPinGate'
@@ -16,24 +16,36 @@ export function QrPay() {
   const navigate = useNavigate()
   const [payment, setPayment] = useState<PaymentRequest | null>(null)
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [loadingPayment, setLoadingPayment] = useState(true)
   const [success, setSuccess] = useState(false)
   const [paying, setPaying] = useState(false)
 
   useEffect(() => {
-    if (!paymentId) return
-    const request = getPaymentRequest(paymentId)
-    if (!request) {
-      setError('Paiement introuvable')
+    if (!paymentId) {
+      setLoadError('Paiement introuvable')
+      setLoadingPayment(false)
       return
     }
-    if (request.status === 'pending' && new Date(request.expiresAt) < new Date()) {
-      setPayment({ ...request, status: 'expired' })
-      return
+
+    let cancelled = false
+    setLoadingPayment(true)
+    fetchQrPayment(paymentId).then((result) => {
+      if (cancelled) return
+      setLoadingPayment(false)
+      if (!result.ok || !result.payment) {
+        setLoadError(result.error ?? 'Paiement introuvable')
+        return
+      }
+      setPayment(result.payment)
+    })
+
+    return () => {
+      cancelled = true
     }
-    setPayment(request)
   }, [paymentId])
 
-  if (isLoading) {
+  if (isLoading || loadingPayment) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
@@ -76,11 +88,11 @@ export function QrPay() {
     )
   }
 
-  if (error && !payment) {
+  if (loadError && !payment) {
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-slate-600">{error}</p>
+        <p className="text-slate-600">{loadError}</p>
         <Link to={CLIENT_DASHBOARD_PATH} className="text-indigo-600 hover:text-indigo-700">
           Retour à l&apos;accueil
         </Link>

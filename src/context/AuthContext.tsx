@@ -9,7 +9,7 @@ import {
 import type { Category, Transaction } from '../types'
 import type { RegisterData, UserAccount } from '../types/auth'
 import type { CardOrder, CardOrderFormData } from '../types/order'
-import { completeQrPayment } from '../store/platformStore'
+import { payQrPaymentOnServer } from '../services/qrPayments'
 import {
   activateCardWithCode,
   createCardOrder,
@@ -477,25 +477,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const pinErr = await verifyCardPin(pin)
     if (pinErr) return { success: false, error: pinErr }
 
-    const result = await completeQrPayment(paymentId, currentUser)
-    if (!result.success || !result.transaction) {
+    const result = await payQrPaymentOnServer(paymentId, pin)
+    if (!result.ok) {
+      if (result.blocked) {
+        sendCardBlockedEmail(currentUser.email, currentUser.fullName)
+      }
+      await refreshCurrentUser()
       return { success: false, error: result.error ?? 'Paiement échoué' }
     }
 
-    const newBalance = currentUser.balance - result.transaction.amount
-    updateUser(currentUser.id, (user) => ({
-      ...user,
-      balance: newBalance,
-      transactions: [result.transaction!, ...user.transactions],
-    }))
-    sendTransactionAlertEmail(
-      currentUser.email,
-      currentUser.fullName,
-      `QR ${result.transaction.merchant ?? 'Commerçant'}`,
-      result.transaction.amount,
-      newBalance,
-      false
-    )
+    await refreshCurrentUser()
+    if (result.payment) {
+      sendTransactionAlertEmail(
+        currentUser.email,
+        currentUser.fullName,
+        `QR ${result.payment.merchantName}`,
+        result.payment.amount,
+        result.newBalance ?? currentUser.balance - result.payment.amount,
+        false
+      )
+    }
     return { success: true }
   }
 

@@ -5,11 +5,12 @@ import { CheckCircle, Copy, RefreshCw, X } from 'lucide-react'
 import { BackToHomeLink } from '../../components/BackToHomeLink'
 import { useMerchantAuth } from '../../context/MerchantAuthContext'
 import {
-  cancelPaymentRequest,
-  createPaymentRequest,
-  getPaymentRequest,
+  cancelQrPaymentOnServer,
+  createQrPaymentOnServer,
+  fetchQrPayment,
   getQrPaymentUrl,
-} from '../../store/platformStore'
+} from '../../services/qrPayments'
+import { upsertFinanceMerchant } from '../../services/financeServer'
 import type { PaymentRequest } from '../../types/merchant'
 import type { Category } from '../../types'
 import { CATEGORY_LABELS } from '../../types'
@@ -23,19 +24,21 @@ export function MerchantCollect() {
   const [activePayment, setActivePayment] = useState<PaymentRequest | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [creating, setCreating] = useState(false)
   const qrSize = useResponsiveQrSize(220, 0.65)
 
   useEffect(() => {
     if (!activePayment || activePayment.status !== 'pending') return
 
     const interval = setInterval(() => {
-      const updated = getPaymentRequest(activePayment.id)
-      if (updated) {
-        setActivePayment(updated)
-        if (updated.status === 'paid') {
-          refreshMerchant()
+      void fetchQrPayment(activePayment.id).then((result) => {
+        if (result.payment) {
+          setActivePayment(result.payment)
+          if (result.payment.status === 'paid') {
+            refreshMerchant()
+          }
         }
-      }
+      })
     }, 2000)
 
     return () => clearInterval(interval)
@@ -48,7 +51,7 @@ export function MerchantCollect() {
   const resolvedCategory =
     paymentCategory || (merchantCategories.length === 1 ? merchantCategories[0] : '')
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -62,17 +65,28 @@ export function MerchantCollect() {
       return
     }
 
+    setCreating(true)
     try {
-      const request = createPaymentRequest(currentMerchant, parsed, resolvedCategory)
-      setActivePayment(request)
-    } catch {
-      setError('Catégorie de paiement invalide')
+      await upsertFinanceMerchant(currentMerchant)
+      const result = await createQrPaymentOnServer({
+        merchantId: currentMerchant.id,
+        merchantName: currentMerchant.businessName,
+        category: resolvedCategory,
+        amount: parsed,
+      })
+      if (!result.ok || !result.payment) {
+        setError(result.error ?? 'Impossible de créer le QR code')
+        return
+      }
+      setActivePayment(result.payment)
+    } finally {
+      setCreating(false)
     }
   }
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (activePayment) {
-      cancelPaymentRequest(activePayment.id, currentMerchant.id)
+      await cancelQrPaymentOnServer(activePayment.id, currentMerchant.id)
     }
     setActivePayment(null)
     setAmount('')
@@ -153,7 +167,7 @@ export function MerchantCollect() {
 
         <button
           type="button"
-          onClick={handleCancel}
+          onClick={() => void handleCancel()}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-slate-600 hover:bg-slate-50"
         >
           <X className="h-4 w-4" />
@@ -172,7 +186,7 @@ export function MerchantCollect() {
         </p>
       </div>
 
-      <form onSubmit={handleGenerate} className="space-y-4">
+      <form onSubmit={(e) => void handleGenerate(e)} className="space-y-4">
         {needsCategoryPick && (
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -220,9 +234,10 @@ export function MerchantCollect() {
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-emerald-600 py-4 font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700"
+          disabled={creating}
+          className="w-full rounded-xl bg-emerald-600 py-4 font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700 disabled:opacity-60"
         >
-          Générer le QR Code
+          {creating ? 'Génération…' : 'Générer le QR Code'}
         </button>
 
         <Link
